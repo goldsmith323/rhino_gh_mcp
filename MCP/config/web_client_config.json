@@ -1,0 +1,22 @@
+{
+  "name": "Rhino Grasshopper MCP",
+  "description": "MCP server for Rhino 3D and Grasshopper parametric design tools",
+  "tools": [
+    {
+      "name": "draw_line_rhino",
+      "description": "Draw a line in Rhino 3D space between two points"
+    },
+    {
+      "name": "list_grasshopper_sliders", 
+      "description": "List all available slider components in Grasshopper"
+    },
+    {
+      "name": "set_grasshopper_slider",
+      "description": "Change the value of a Grasshopper slider by name"
+    },
+    {
+      "name": "get_rhino_info",
+      "description": "Get information about the current Rhino session"
+    }
+  ]
+}

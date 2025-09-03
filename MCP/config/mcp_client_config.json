@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "Rhino Grasshopper MCP": {
+      "command": "python",
+      "args": [
+        "C:\\Users\\SeyedZ\\Documents\\GitHub\\rhino_gh_mcp\\main.py"
+      ],
+      "description": "Rhino 3D and Grasshopper parametric design tools"
+    }
+  }
+}
