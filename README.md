@@ -2,8 +2,6 @@
 
 A Model Context Protocol (MCP) server that provides tools for interacting with Rhino 3D and Grasshopper. Uses an HTTP bridge architecture to solve Python version compatibility between MCP (Python 3.10+) and Rhino's Python 3.9.
 
-**Author:** Hossein Zargar
-
 ## 📁 Project Structure
 
 This repository is organized into three main directories:
@@ -71,12 +69,6 @@ Claude Desktop → MCP Server → HTTP Bridge → Rhino/Grasshopper
 - **Grasshopper tools**: Edit `Tools/gh_tools.py`  
 - See `Tools/README.md` for detailed instructions
 
-### Project Benefits
-- ✅ **Clean organization** - Each directory has a clear purpose
-- ✅ **Easy setup** - Step-by-step guides in each directory  
-- ✅ **Developer friendly** - Simple to add new tools
-- ✅ **Modular design** - Components can be developed independently
-
 ## 📖 Documentation
 
 Each directory contains its own README with specific setup instructions:
@@ -91,17 +83,3 @@ After setup, verify everything works:
 2. MCP server starts without errors
 3. Claude Desktop shows available tools
 4. Tools execute successfully
-
-## ⚡ Key Features
-
-- **Python compatibility solved** - HTTP bridge handles version differences
-- **Modular architecture** - Clean separation of concerns
-- **Easy to extend** - Add tools by editing appropriate module
-- **Well documented** - Clear setup guides for each component
-- **Production ready** - Tested and working with Claude Desktop
-
----
-
-**Ready to get started?** Choose your path:
-- **User**: Follow `MCP/README.md` then `Rhino/README.md`
-- **Developer**: Start with `Tools/README.md` to understand the architecture
