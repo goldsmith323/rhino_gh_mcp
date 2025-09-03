@@ -2,8 +2,6 @@
 
 A Model Context Protocol (MCP) server that provides tools for interacting with Rhino 3D and Grasshopper. Uses an HTTP bridge architecture to solve Python version compatibility between MCP (Python 3.10+) and Rhino's Python 3.9.
 
-**Author:** Hossein Zargar
-
 ## 📁 Project Structure
 
 This repository is organized into three main directories:
@@ -54,35 +52,12 @@ In Claude Desktop:
 - "Draw a line from 0,0,0 to 10,10,5"
 - "List Grasshopper sliders"
 
-## 🏗️ Architecture
-
-```
-Claude Desktop → MCP Server → HTTP Bridge → Rhino/Grasshopper
-```
-
-- **MCP Server** (Python 3.10+) - Handles Claude Desktop communication
-- **HTTP Bridge** (Python 3.9) - Runs inside Rhino, executes operations  
-- **Tool Modules** - Organized by category for easy expansion
-
 ## 🔧 For Developers
 
 ### Adding New Tools
 - **Rhino tools**: Edit `Tools/rhino_tools.py`
 - **Grasshopper tools**: Edit `Tools/gh_tools.py`  
 - See `Tools/README.md` for detailed instructions
-
-### Project Benefits
-- ✅ **Clean organization** - Each directory has a clear purpose
-- ✅ **Easy setup** - Step-by-step guides in each directory  
-- ✅ **Developer friendly** - Simple to add new tools
-- ✅ **Modular design** - Components can be developed independently
-
-## 📖 Documentation
-
-Each directory contains its own README with specific setup instructions:
-- **`MCP/README.md`** - MCP server setup and Claude Desktop integration
-- **`Rhino/README.md`** - Rhino bridge server setup and usage
-- **`Tools/README.md`** - Tool development and extension guide
 
 ## 🧪 Testing
 
@@ -91,17 +66,3 @@ After setup, verify everything works:
 2. MCP server starts without errors
 3. Claude Desktop shows available tools
 4. Tools execute successfully
-
-## ⚡ Key Features
-
-- **Python compatibility solved** - HTTP bridge handles version differences
-- **Modular architecture** - Clean separation of concerns
-- **Easy to extend** - Add tools by editing appropriate module
-- **Well documented** - Clear setup guides for each component
-- **Production ready** - Tested and working with Claude Desktop
-
----
-
-**Ready to get started?** Choose your path:
-- **User**: Follow `MCP/README.md` then `Rhino/README.md`
-- **Developer**: Start with `Tools/README.md` to understand the architecture
