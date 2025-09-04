@@ -29,9 +29,9 @@ python main.py
 ```
 
 The server will:
-- Load tools from the `../Tools/` directory
+- Auto-discover tools from the `../Tools/` directory using decorators
 - Try to connect to the Rhino bridge server at `localhost:8080`
-- Register all available tools with the MCP protocol
+- Register all discovered tools with the MCP protocol
 - Wait for requests from Claude Desktop
 
 ## Usage
@@ -39,6 +39,7 @@ The server will:
 Once configured, you can use these commands in Claude Desktop:
 - "Get Rhino information"
 - "Draw a line from 0,0,0 to 10,10,5"  
+- "Generate a Pratt truss from 0,0,0 to 20,0,0 with depth 3 and 6 divisions"
 - "List Grasshopper sliders"
 - "Set Width slider to 25"
 

@@ -23,15 +23,19 @@ except ImportError:
     print("Error: MCP not installed. Please install with: pip install mcp")
     sys.exit(1)
 
-# Import tool modules
+# Import tool discovery system
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'Tools'))
 try:
-    from rhino_tools import RHINO_TOOLS
-    from gh_tools import GRASSHOPPER_TOOLS
+    from tool_registry import discover_tools, get_rhino_tools, get_gh_tools, get_all_tools
+except ImportError as e:
+    print(f"Error importing tool registry: {e}")
+    sys.exit(1)
+
+try:
     from bridge_client import BRIDGE_URL, get_bridge_status
 except ImportError as e:
-    print(f"Error importing tool modules: {e}")
+    print(f"Error importing bridge client: {e}")
     sys.exit(1)
 
 # Initialize MCP server
@@ -49,23 +53,31 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 def register_tools():
-    """Register all tools from tool modules"""
+    """Discover and register all tools automatically"""
+    
+    # Discover all tools from decorated functions
+    print("Discovering tools...")
+    discovered = discover_tools()
     
     # Register Rhino tools
-    for tool_def in RHINO_TOOLS:
+    rhino_tools = get_rhino_tools()
+    for tool_def in rhino_tools:
         mcp.tool(
             name=tool_def["name"],
             description=tool_def["description"]
         )(tool_def["function"])
-        logger.info(f"Registered Rhino tool: {tool_def['name']}")
+        logger.info(f"Auto-registered Rhino tool: {tool_def['name']}")
     
     # Register Grasshopper tools
-    for tool_def in GRASSHOPPER_TOOLS:
+    gh_tools = get_gh_tools()
+    for tool_def in gh_tools:
         mcp.tool(
             name=tool_def["name"], 
             description=tool_def["description"]
         )(tool_def["function"])
-        logger.info(f"Registered Grasshopper tool: {tool_def['name']}")
+        logger.info(f"Auto-registered Grasshopper tool: {tool_def['name']}")
+    
+    return len(rhino_tools), len(gh_tools)
 
 def check_bridge_connection():
     """Check if bridge server is available"""
@@ -86,8 +98,8 @@ if __name__ == "__main__":
     print(f"Bridge server URL: {BRIDGE_URL}")
     print("This MCP server communicates with Rhino via HTTP bridge.")
     
-    # Register all tools
-    register_tools()
+    # Register all tools using auto-discovery
+    total_rhino, total_gh = register_tools()
     
     # Check bridge connection (optional - server will still start)
     bridge_ok = check_bridge_connection()
@@ -95,9 +107,7 @@ if __name__ == "__main__":
         print("Warning: Bridge server not available. Make sure to start it in Rhino before using tools.")
     
     # Print summary
-    total_rhino = len(RHINO_TOOLS)
-    total_gh = len(GRASSHOPPER_TOOLS)
-    print(f"Registered {total_rhino} Rhino tools and {total_gh} Grasshopper tools")
+    print(f"Auto-discovered and registered {total_rhino} Rhino tools and {total_gh} Grasshopper tools")
     
     # Start MCP server
     print("MCP server starting...")
