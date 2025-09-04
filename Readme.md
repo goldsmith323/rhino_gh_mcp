@@ -21,8 +21,9 @@ Contains everything needed to run the HTTP bridge server inside Rhino:
 
 ### 🛠️ **Tools/**
 Contains all the tool definitions organized by category:
-- **`rhino_tools.py`** - All Rhino 3D modeling tools (easy to extend)
-- **`gh_tools.py`** - All Grasshopper parametric tools (easy to extend)
+- **`rhino_tools.py`** - All Rhino 3D modeling tools (auto-discovery with decorators)
+- **`gh_tools.py`** - All Grasshopper parametric tools (auto-discovery with decorators)
+- **`tool_registry.py`** - Auto-discovery system using decorators
 - **`README.md`** - Guide for developers to add new tools
 
 ## 🚀 Quick Start
@@ -54,9 +55,18 @@ In Claude Desktop:
 
 ## 🔧 For Developers
 
-### Adding New Tools
-- **Rhino tools**: Edit `Tools/rhino_tools.py`
-- **Grasshopper tools**: Edit `Tools/gh_tools.py`  
+### Adding New Tools (Auto-Discovery System)
+**NEW**: Tools are now automatically discovered using decorators! Just add a decorator and your tool is instantly available in MCP.
+
+```python
+@rhino_tool(name="my_tool", description="Does something awesome")
+async def my_tool(param1: float):
+    return call_bridge_api("/my_endpoint", {...})
+```
+
+- **Rhino tools**: Add `@rhino_tool` decorator to functions in `Tools/rhino_tools.py`
+- **Grasshopper tools**: Add `@gh_tool` decorator to functions in `Tools/gh_tools.py`  
+- **Zero configuration**: No manual registration needed - tools are auto-discovered on startup
 - See `Tools/README.md` for detailed instructions
 
 ## 🧪 Testing

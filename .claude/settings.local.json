@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(/C:\\Users\\SeyedZ\\Documents\\GitHub\\rhino_gh_mcp/**)",
+      "Read(/C:\\Users\\SeyedZ\\Documents\\GitHub\\rhino_gh_mcp\\Tools/**)",
+      "Read(/C:\\Users\\SeyedZ\\Documents\\GitHub\\rhino_gh_mcp\\MCP/**)",
+      "Read(/C:\\Users\\SeyedZ\\Documents\\GitHub\\rhino_gh_mcp\\Rhino/**)",
+      "Read(/C:\\Users\\SeyedZ\\Documents\\GitHub\\rhino_gh_mcp\\Tools/**)",
+      "Read(/C:\\Users\\SeyedZ\\Documents\\GitHub\\rhino_gh_mcp\\Tools/**)",
+      "Bash(python:*)",
+      "Read(/C:\\Users\\SeyedZ\\Documents\\GitHub\\rhino_gh_mcp\\Tools/**)",
+      "Read(/C:\\Users\\SeyedZ\\Documents\\GitHub\\rhino_gh_mcp\\Rhino/**)",
+      "Read(/C:\\Users\\SeyedZ\\Documents\\GitHub\\rhino_gh_mcp\\MCP/**)",
+      "Read(/C:\\Users\\SeyedZ\\Documents\\GitHub\\rhino_gh_mcp\\Tools/**)",
+      "Read(/C:\\Users\\SeyedZ\\Documents\\GitHub\\rhino_gh_mcp/**)",
+      "Read(/C:\\Users\\SeyedZ\\Documents\\GitHub\\rhino_gh_mcp\\Tools/**)",
+      "Read(/C:\\Users\\SeyedZ\\Documents\\GitHub\\rhino_gh_mcp\\MCP/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
