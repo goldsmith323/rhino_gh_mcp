@@ -19,13 +19,13 @@ This directory contains all the tool definitions organized by category. This is 
 - **`list_grasshopper_sliders`** - List all available slider components
 - **`set_grasshopper_slider`** - Change slider values by name
 
-## Adding New Tools (Auto-Discovery System)
+## Adding New Tools (Fully Dynamic System)
 
-**NEW**: Tools are now automatically discovered using decorators! No manual registration needed.
+**NEW**: Both MCP tools AND bridge endpoints are now automatically discovered using decorators! No manual registration needed anywhere.
 
 ### For Rhino Tools
 
-1. **Add the decorated function** to `rhino_tools.py`:
+1. **Add the MCP tool** to `rhino_tools.py`:
    ```python
    @rhino_tool(
        name="create_circle_rhino",
@@ -39,26 +39,34 @@ This directory contains all the tool definitions organized by category. This is 
        })
    ```
 
-2. **Add the corresponding endpoint** to `../Rhino/rhino_bridge_server.py`:
+2. **Add the bridge handler** to the same `rhino_tools.py` file:
    ```python
-   elif endpoint == '/create_circle':
-       self.handle_create_circle(request_data)
+   @bridge_handler("/create_circle")
+   def handle_create_circle(data):
+       try:
+           import rhinoscriptsyntax as rs
+           center = [data.get('center_x', 0), data.get('center_y', 0), 0]
+           radius = data.get('radius', 1)
+           circle_id = rs.AddCircle(center, radius)
+           return {"success": True, "circle_id": str(circle_id)}
+       except Exception as e:
+           return {"success": False, "error": str(e)}
    ```
 
-**That's it!** The tool is automatically discovered and registered when the MCP server starts.
+**That's it!** Both the MCP tool and bridge endpoint are automatically discovered and registered when servers start.
 
 ### For Grasshopper Tools
 
-Follow the same pattern but use `@gh_tool` decorator in `gh_tools.py`.
+Follow the same pattern but use `@gh_tool` and `@bridge_handler` decorators in `gh_tools.py`.
 
-## Tool Structure (Updated)
+## Tool Structure (Fully Dynamic)
 
 Each tool now needs:
-- **Decorated async function** - Uses `@rhino_tool` or `@gh_tool` decorator with metadata
-- **Bridge endpoint** - Handles the HTTP request in Rhino (if new endpoint needed)
+- **MCP tool function** - Uses `@rhino_tool` or `@gh_tool` decorator for client-side API
+- **Bridge handler function** - Uses `@bridge_handler` decorator for server-side execution
 
-**OLD** (manual registration): Function + separate tool definition in TOOLS list  
-**NEW** (auto-discovery): Just add decorator to function - that's it!
+**BEFORE** (manual): Function + manual tool registration + manual bridge endpoint registration  
+**NOW** (fully dynamic): Just add two decorators to functions - zero manual registration!
 
 ## Examples of Future Tools
 
@@ -85,9 +93,11 @@ Each tool now needs:
 
 ## Testing New Tools
 
-1. **Add the decorated tool** following the steps above
-2. **Restart the MCP server** - tools are auto-discovered on startup
+1. **Add both decorators** following the steps above (MCP tool + bridge handler)
+2. **Restart both servers**:
+   - Restart MCP server - MCP tools are auto-discovered on startup
+   - Restart Rhino bridge server - bridge handlers are auto-discovered on startup
 3. **Test in Claude Desktop** with simple commands
-4. **Verify bridge endpoints** work with direct HTTP calls
+4. **Verify bridge endpoints** work with direct HTTP calls to `http://localhost:8080/your_endpoint`
 
-The auto-discovery system makes it even easier to expand functionality - just add a decorator and restart!
+The fully dynamic system makes it incredibly easy to expand functionality - just add two decorators and restart both servers!

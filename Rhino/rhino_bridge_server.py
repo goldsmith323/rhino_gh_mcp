@@ -6,8 +6,8 @@ A lightweight HTTP server that runs inside Rhino Python 3.9 environment.
 This bridge receives HTTP requests from the external MCP server and executes
 Rhino/Grasshopper operations, returning results via HTTP responses.
 
-This server provides a generic HTTP API that can be extended with new endpoints
-as tools are added to the tool modules (rhino_tools.py, gh_tools.py).
+This server provides a dynamic HTTP API that automatically discovers and registers
+endpoints from tool modules (rhino_tools.py, gh_tools.py).
 
 Author: Hossein Zargar
 """
@@ -16,6 +16,12 @@ import json
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import urllib.parse
+import sys
+import os
+
+# Add Tools directory to path for dynamic handler discovery
+tools_path = os.path.join(os.path.dirname(__file__), '..', 'Tools')
+sys.path.append(tools_path)
 
 # Try to import Rhino modules - these should be available inside Rhino
 try:
@@ -37,6 +43,45 @@ except ImportError:
     GRASSHOPPER_AVAILABLE = False
     print("Warning: Grasshopper modules not available")
 
+# Import dynamic handler system
+try:
+    from tool_registry import discover_tools, get_bridge_handler
+    DYNAMIC_HANDLERS_AVAILABLE = True
+    print("Dynamic handler system loaded")
+except ImportError as e:
+    DYNAMIC_HANDLERS_AVAILABLE = False
+    print(f"Warning: Dynamic handler system not available: {e}")
+
+# Initialize handlers at module level
+_handlers_initialized = False
+_dynamic_handlers = {}
+
+def initialize_dynamic_handlers():
+    """Initialize dynamic handlers by discovering tools"""
+    global _handlers_initialized, _dynamic_handlers
+    
+    if _handlers_initialized or not DYNAMIC_HANDLERS_AVAILABLE:
+        return _dynamic_handlers
+    
+    try:
+        print("Discovering and initializing dynamic handlers...")
+        discover_tools()  # This will populate the handler registry
+        
+        # Get handlers from registry
+        from tool_registry import get_bridge_handlers
+        handlers = get_bridge_handlers()
+        _dynamic_handlers.update(handlers)
+        
+        print(f"Initialized {len(_dynamic_handlers)} dynamic handlers:")
+        for endpoint in sorted(_dynamic_handlers.keys()):
+            print(f"  {endpoint}")
+        
+        _handlers_initialized = True
+        return _dynamic_handlers
+    except Exception as e:
+        print(f"Error initializing dynamic handlers: {e}")
+        return _dynamic_handlers
+
 class RhinoBridgeHandler(BaseHTTPRequestHandler):
     """HTTP request handler for Rhino operations"""
     
@@ -56,6 +101,10 @@ class RhinoBridgeHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         """Handle POST requests for Rhino operations"""
         try:
+            # Initialize dynamic handlers if not done yet
+            if not _handlers_initialized:
+                initialize_dynamic_handlers()
+            
             # Parse the request path
             parsed_path = urllib.parse.urlparse(self.path)
             endpoint = parsed_path.path
@@ -68,499 +117,24 @@ class RhinoBridgeHandler(BaseHTTPRequestHandler):
             else:
                 request_data = {}
             
-            # Route to appropriate handler
-            if endpoint == '/draw_line':
-                self.handle_draw_line(request_data)
-            elif endpoint == '/list_sliders':
-                self.handle_list_sliders(request_data)
-            elif endpoint == '/set_slider':
-                self.handle_set_slider(request_data)
-            elif endpoint == '/get_rhino_info':
-                self.handle_get_rhino_info(request_data)
-            elif endpoint == '/generate_truss':
-                self.handle_generate_truss(request_data)
-            else:
-                self.send_error_response(404, f"Unknown endpoint: {endpoint}")
+            # Try dynamic handler
+            if endpoint in _dynamic_handlers:
+                try:
+                    handler_func = _dynamic_handlers[endpoint]
+                    result = handler_func(request_data)
+                    self.send_json_response(result)
+                    return
+                except Exception as e:
+                    self.send_error_response(500, f"Handler error for {endpoint}: {str(e)}")
+                    return
+            
+            # If no dynamic handler found, return 404
+            self.send_error_response(404, f"Unknown endpoint: {endpoint}")
                 
         except json.JSONDecodeError:
             self.send_error_response(400, "Invalid JSON in request body")
         except Exception as e:
             self.send_error_response(500, f"Internal server error: {str(e)}")
-    
-    def handle_draw_line(self, data):
-        """Handle line drawing requests"""
-        try:
-            # Extract coordinates
-            start_x = float(data.get('start_x', 0))
-            start_y = float(data.get('start_y', 0))
-            start_z = float(data.get('start_z', 0))
-            end_x = float(data.get('end_x', 0))
-            end_y = float(data.get('end_y', 0))
-            end_z = float(data.get('end_z', 0))
-            
-            if not RHINO_AVAILABLE:
-                response = {
-                    "success": False,
-                    "error": "Rhino is not available",
-                    "line_id": None
-                }
-            else:
-                # Create the line in Rhino
-                start_point = [start_x, start_y, start_z]
-                end_point = [end_x, end_y, end_z]
-                
-                line_id = rs.AddLine(start_point, end_point)
-                
-                if line_id:
-                    line_length = rs.CurveLength(line_id)
-                    response = {
-                        "success": True,
-                        "line_id": str(line_id),
-                        "start_point": start_point,
-                        "end_point": end_point,
-                        "length": line_length,
-                        "message": f"Line created successfully with length {line_length:.2f}"
-                    }
-                else:
-                    response = {
-                        "success": False,
-                        "error": "Failed to create line in Rhino",
-                        "line_id": None
-                    }
-            
-            self.send_json_response(response)
-            
-        except Exception as e:
-            self.send_error_response(500, f"Error drawing line: {str(e)}")
-    
-    def handle_list_sliders(self, data):
-        """Handle list sliders requests"""
-        try:
-            if not GRASSHOPPER_AVAILABLE:
-                response = {
-                    "success": False,
-                    "error": "Grasshopper is not available",
-                    "sliders": []
-                }
-            else:
-                # Mock response for now - can be extended with real GH API
-                sliders = [
-                    {"name": "Width", "current_value": 10.0, "min": 0.0, "max": 100.0},
-                    {"name": "Height", "current_value": 20.0, "min": 0.0, "max": 50.0},
-                    {"name": "Count", "current_value": 5.0, "min": 1.0, "max": 20.0}
-                ]
-                
-                response = {
-                    "success": True,
-                    "sliders": sliders,
-                    "count": len(sliders),
-                    "message": f"Found {len(sliders)} slider components"
-                }
-            
-            self.send_json_response(response)
-            
-        except Exception as e:
-            self.send_error_response(500, f"Error listing sliders: {str(e)}")
-    
-    def handle_set_slider(self, data):
-        """Handle set slider requests"""
-        try:
-            slider_name = data.get('slider_name', '')
-            new_value = float(data.get('new_value', 0))
-            
-            if not GRASSHOPPER_AVAILABLE:
-                response = {
-                    "success": False,
-                    "error": "Grasshopper is not available",
-                    "slider_name": slider_name,
-                    "new_value": new_value
-                }
-            else:
-                # Mock implementation - can be extended with real GH API
-                if slider_name.lower() in ["width", "height", "count"]:
-                    response = {
-                        "success": True,
-                        "slider_name": slider_name,
-                        "old_value": 10.0,  # Mock old value
-                        "new_value": new_value,
-                        "message": f"Slider '{slider_name}' updated to {new_value}"
-                    }
-                else:
-                    response = {
-                        "success": False,
-                        "error": f"Slider '{slider_name}' not found",
-                        "slider_name": slider_name,
-                        "new_value": new_value
-                    }
-            
-            self.send_json_response(response)
-            
-        except Exception as e:
-            self.send_error_response(500, f"Error setting slider: {str(e)}")
-    
-    def handle_get_rhino_info(self, data):
-        """Handle get Rhino info requests"""
-        try:
-            if not RHINO_AVAILABLE:
-                response = {
-                    "success": False,
-                    "error": "Rhino is not available",
-                    "info": {}
-                }
-            else:
-                info = {
-                    "rhino_available": RHINO_AVAILABLE,
-                    "grasshopper_available": GRASSHOPPER_AVAILABLE,
-                }
-                
-                # Try to get Rhino-specific information
-                try:
-                    info["document_units"] = rs.UnitSystemName(rs.UnitSystem())
-                    info["object_count"] = rs.ObjectCount()
-                    info["is_command_running"] = rs.IsCommand()
-                except Exception as e:
-                    info["rhino_error"] = str(e)
-                
-                response = {
-                    "success": True,
-                    "info": info,
-                    "message": "Rhino information retrieved successfully"
-                }
-            
-            self.send_json_response(response)
-            
-        except Exception as e:
-            self.send_error_response(500, f"Error getting Rhino info: {str(e)}")
-    
-    def handle_generate_truss(self, data):
-        """Handle truss generation requests"""
-        try:
-            # Extract truss parameters
-            upper_line_start_x = float(data.get('upper_line_start_x', 0))
-            upper_line_start_y = float(data.get('upper_line_start_y', 0))
-            upper_line_start_z = float(data.get('upper_line_start_z', 0))
-            upper_line_end_x = float(data.get('upper_line_end_x', 10))
-            upper_line_end_y = float(data.get('upper_line_end_y', 0))
-            upper_line_end_z = float(data.get('upper_line_end_z', 0))
-            truss_depth = float(data.get('truss_depth', 2))
-            num_divisions = int(data.get('num_divisions', 4))
-            truss_type = data.get('truss_type', 'Pratt')
-            clear_previous = data.get('clear_previous', True)
-            truss_plane_direction = data.get('truss_plane_direction', 'perpendicular')
-            
-            if not RHINO_AVAILABLE:
-                response = {
-                    "success": False,
-                    "error": "Rhino is not available",
-                    "truss_members": []
-                }
-            else:
-                # Clear previous truss if requested
-                if clear_previous:
-                    self.clear_previous_trusses()
-                
-                # Generate truss geometry
-                truss_members = self.create_truss_geometry(
-                    [upper_line_start_x, upper_line_start_y, upper_line_start_z],
-                    [upper_line_end_x, upper_line_end_y, upper_line_end_z],
-                    truss_depth,
-                    num_divisions,
-                    truss_type,
-                    truss_plane_direction
-                )
-                
-                if truss_members:
-                    response = {
-                        "success": True,
-                        "truss_members": truss_members,
-                        "num_members": len(truss_members),
-                        "truss_depth": truss_depth,
-                        "num_divisions": num_divisions,
-                        "truss_type": truss_type,
-                        "message": f"{truss_type} truss created successfully with {len(truss_members)} members"
-                    }
-                else:
-                    response = {
-                        "success": False,
-                        "error": "Failed to create truss in Rhino",
-                        "truss_members": []
-                    }
-            
-            self.send_json_response(response)
-            
-        except Exception as e:
-            self.send_error_response(500, f"Error generating truss: {str(e)}")
-    
-    def clear_previous_trusses(self):
-        """Clear previously generated truss objects"""
-        try:
-            # Get all objects with "truss" user text
-            all_objects = rs.AllObjects()
-            if all_objects:
-                truss_objects = []
-                for obj_id in all_objects:
-                    user_text = rs.GetUserText(obj_id, "object_type")
-                    if user_text == "truss_member":
-                        truss_objects.append(obj_id)
-                
-                if truss_objects:
-                    rs.DeleteObjects(truss_objects)
-                    print(f"Cleared {len(truss_objects)} previous truss members")
-        except Exception as e:
-            print(f"Error clearing previous trusses: {str(e)}")
-    
-    def create_truss_geometry(self, start_point, end_point, depth, divisions, truss_type, plane_direction):
-        """Create the actual truss geometry in Rhino"""
-        try:
-            truss_members = []
-            
-            # Calculate truss parameters
-            import math
-            
-            # Vector from start to end of upper chord
-            upper_vector = [end_point[0] - start_point[0], 
-                          end_point[1] - start_point[1], 
-                          end_point[2] - start_point[2]]
-            
-            # Length of upper chord
-            upper_length = math.sqrt(upper_vector[0]**2 + upper_vector[1]**2 + upper_vector[2]**2)
-            
-            # Normalize upper vector
-            if upper_length > 0:
-                upper_unit = [v / upper_length for v in upper_vector]
-            else:
-                upper_unit = [1, 0, 0]
-            
-            # Calculate perpendicular direction for truss depth
-            # For simplicity, we'll use the Z-direction (vertical) for depth
-            depth_vector = [0, 0, -depth]  # Truss extends downward
-            
-            # Generate division points along upper chord
-            division_points_top = []
-            division_points_bottom = []
-            
-            for i in range(divisions + 1):
-                t = i / divisions
-                
-                # Top chord points
-                top_point = [
-                    start_point[0] + t * upper_vector[0],
-                    start_point[1] + t * upper_vector[1],
-                    start_point[2] + t * upper_vector[2]
-                ]
-                division_points_top.append(top_point)
-                
-                # Bottom chord points (offset by depth)
-                bottom_point = [
-                    top_point[0] + depth_vector[0],
-                    top_point[1] + depth_vector[1],
-                    top_point[2] + depth_vector[2]
-                ]
-                division_points_bottom.append(bottom_point)
-            
-            # Create top chord segments
-            for i in range(divisions):
-                line_id = rs.AddLine(division_points_top[i], division_points_top[i + 1])
-                if line_id:
-                    rs.SetUserText(line_id, "object_type", "truss_member")
-                    rs.SetUserText(line_id, "member_type", "top_chord")
-                    truss_members.append({
-                        "id": str(line_id),
-                        "type": "top_chord",
-                        "start": division_points_top[i],
-                        "end": division_points_top[i + 1]
-                    })
-            
-            # Create bottom chord segments
-            for i in range(divisions):
-                line_id = rs.AddLine(division_points_bottom[i], division_points_bottom[i + 1])
-                if line_id:
-                    rs.SetUserText(line_id, "object_type", "truss_member")
-                    rs.SetUserText(line_id, "member_type", "bottom_chord")
-                    truss_members.append({
-                        "id": str(line_id),
-                        "type": "bottom_chord",
-                        "start": division_points_bottom[i],
-                        "end": division_points_bottom[i + 1]
-                    })
-            
-            # Create web members based on truss type
-            if truss_type.lower() == "pratt":
-                # Pratt: Verticals + diagonals in compression
-                for i in range(divisions + 1):
-                    line_id = rs.AddLine(division_points_top[i], division_points_bottom[i])
-                    if line_id:
-                        rs.SetUserText(line_id, "object_type", "truss_member")
-                        rs.SetUserText(line_id, "member_type", "vertical")
-                        truss_members.append({
-                            "id": str(line_id),
-                            "type": "vertical",
-                            "start": division_points_top[i],
-                            "end": division_points_bottom[i]
-                        })
-                
-                for i in range(divisions):
-                    if i % 2 == 0:  # Alternate diagonals
-                        line_id = rs.AddLine(division_points_bottom[i], division_points_top[i + 1])
-                    else:
-                        line_id = rs.AddLine(division_points_top[i], division_points_bottom[i + 1])
-                    
-                    if line_id:
-                        rs.SetUserText(line_id, "object_type", "truss_member")
-                        rs.SetUserText(line_id, "member_type", "diagonal")
-                        truss_members.append({
-                            "id": str(line_id),
-                            "type": "diagonal",
-                            "start": division_points_bottom[i] if i % 2 == 0 else division_points_top[i],
-                            "end": division_points_top[i + 1] if i % 2 == 0 else division_points_bottom[i + 1]
-                        })
-            
-            elif truss_type.lower() == "warren":
-                # Warren: No verticals, alternating diagonals
-                for i in range(divisions):
-                    if i % 2 == 0:
-                        line_id = rs.AddLine(division_points_bottom[i], division_points_top[i + 1])
-                        start_pt, end_pt = division_points_bottom[i], division_points_top[i + 1]
-                    else:
-                        line_id = rs.AddLine(division_points_top[i], division_points_bottom[i + 1])
-                        start_pt, end_pt = division_points_top[i], division_points_bottom[i + 1]
-                    
-                    if line_id:
-                        rs.SetUserText(line_id, "object_type", "truss_member")
-                        rs.SetUserText(line_id, "member_type", "diagonal")
-                        truss_members.append({
-                            "id": str(line_id),
-                            "type": "diagonal",
-                            "start": start_pt,
-                            "end": end_pt
-                        })
-            
-            elif truss_type.lower() == "vierendeel":
-                # Vierendeel: Only verticals, no diagonals (moment frame)
-                for i in range(divisions + 1):
-                    line_id = rs.AddLine(division_points_top[i], division_points_bottom[i])
-                    if line_id:
-                        rs.SetUserText(line_id, "object_type", "truss_member")
-                        rs.SetUserText(line_id, "member_type", "vertical")
-                        truss_members.append({
-                            "id": str(line_id),
-                            "type": "vertical",
-                            "start": division_points_top[i],
-                            "end": division_points_bottom[i]
-                        })
-            
-            elif truss_type.lower() == "howe":
-                # Howe: Verticals + diagonals in tension (opposite of Pratt)
-                for i in range(divisions + 1):
-                    line_id = rs.AddLine(division_points_top[i], division_points_bottom[i])
-                    if line_id:
-                        rs.SetUserText(line_id, "object_type", "truss_member")
-                        rs.SetUserText(line_id, "member_type", "vertical")
-                        truss_members.append({
-                            "id": str(line_id),
-                            "type": "vertical",
-                            "start": division_points_top[i],
-                            "end": division_points_bottom[i]
-                        })
-                
-                for i in range(divisions):
-                    if i % 2 == 0:
-                        line_id = rs.AddLine(division_points_top[i], division_points_bottom[i + 1])
-                    else:
-                        line_id = rs.AddLine(division_points_bottom[i], division_points_top[i + 1])
-                    
-                    if line_id:
-                        rs.SetUserText(line_id, "object_type", "truss_member")
-                        rs.SetUserText(line_id, "member_type", "diagonal")
-                        truss_members.append({
-                            "id": str(line_id),
-                            "type": "diagonal",
-                            "start": division_points_top[i] if i % 2 == 0 else division_points_bottom[i],
-                            "end": division_points_bottom[i + 1] if i % 2 == 0 else division_points_top[i + 1]
-                        })
-            
-            elif truss_type.lower() == "brown":
-                # Brown: Similar to Pratt with different diagonal pattern
-                for i in range(divisions + 1):
-                    line_id = rs.AddLine(division_points_top[i], division_points_bottom[i])
-                    if line_id:
-                        rs.SetUserText(line_id, "object_type", "truss_member")
-                        rs.SetUserText(line_id, "member_type", "vertical")
-                        truss_members.append({
-                            "id": str(line_id),
-                            "type": "vertical",
-                            "start": division_points_top[i],
-                            "end": division_points_bottom[i]
-                        })
-                
-                for i in range(divisions):
-                    # Brown pattern: both diagonals in each bay
-                    line_id1 = rs.AddLine(division_points_bottom[i], division_points_top[i + 1])
-                    line_id2 = rs.AddLine(division_points_top[i], division_points_bottom[i + 1])
-                    
-                    for line_id, start_pt, end_pt in [
-                        (line_id1, division_points_bottom[i], division_points_top[i + 1]),
-                        (line_id2, division_points_top[i], division_points_bottom[i + 1])
-                    ]:
-                        if line_id:
-                            rs.SetUserText(line_id, "object_type", "truss_member")
-                            rs.SetUserText(line_id, "member_type", "diagonal")
-                            truss_members.append({
-                                "id": str(line_id),
-                                "type": "diagonal",
-                                "start": start_pt,
-                                "end": end_pt
-                            })
-            
-            elif truss_type.lower() == "onedir":
-                # Onedir: Single direction diagonals only
-                for i in range(divisions):
-                    line_id = rs.AddLine(division_points_bottom[i], division_points_top[i + 1])
-                    if line_id:
-                        rs.SetUserText(line_id, "object_type", "truss_member")
-                        rs.SetUserText(line_id, "member_type", "diagonal")
-                        truss_members.append({
-                            "id": str(line_id),
-                            "type": "diagonal",
-                            "start": division_points_bottom[i],
-                            "end": division_points_top[i + 1]
-                        })
-            
-            else:
-                # Default to Pratt if unknown type
-                for i in range(divisions + 1):
-                    line_id = rs.AddLine(division_points_top[i], division_points_bottom[i])
-                    if line_id:
-                        rs.SetUserText(line_id, "object_type", "truss_member")
-                        rs.SetUserText(line_id, "member_type", "vertical")
-                        truss_members.append({
-                            "id": str(line_id),
-                            "type": "vertical",
-                            "start": division_points_top[i],
-                            "end": division_points_bottom[i]
-                        })
-                
-                for i in range(divisions):
-                    if i % 2 == 0:
-                        line_id = rs.AddLine(division_points_bottom[i], division_points_top[i + 1])
-                    else:
-                        line_id = rs.AddLine(division_points_top[i], division_points_bottom[i + 1])
-                    
-                    if line_id:
-                        rs.SetUserText(line_id, "object_type", "truss_member")
-                        rs.SetUserText(line_id, "member_type", "diagonal")
-                        truss_members.append({
-                            "id": str(line_id),
-                            "type": "diagonal",
-                            "start": division_points_bottom[i] if i % 2 == 0 else division_points_top[i],
-                            "end": division_points_top[i + 1] if i % 2 == 0 else division_points_bottom[i + 1]
-                        })
-            
-            return truss_members
-            
-        except Exception as e:
-            print(f"Error in create_truss_geometry: {str(e)}")
-            return []
     
     def send_status_response(self):
         """Send server status"""
@@ -574,19 +148,29 @@ class RhinoBridgeHandler(BaseHTTPRequestHandler):
     
     def send_info_response(self):
         """Send server info"""
+        # Get dynamic endpoints
+        if not _handlers_initialized:
+            initialize_dynamic_handlers()
+        
+        endpoints = [
+            {"path": "/status", "method": "GET", "description": "Server status"},
+            {"path": "/info", "method": "GET", "description": "Server information"}
+        ]
+        
+        # Add dynamic endpoints
+        for endpoint in sorted(_dynamic_handlers.keys()):
+            endpoints.append({
+                "path": endpoint,
+                "method": "POST",
+                "description": f"Dynamic handler for {endpoint}"
+            })
+        
         info = {
             "name": "Rhino HTTP Bridge Server",
-            "version": "1.0.0",
+            "version": "2.0.0",
             "author": "Hossein Zargar",
-            "endpoints": [
-                {"path": "/status", "method": "GET", "description": "Server status"},
-                {"path": "/info", "method": "GET", "description": "Server information"},
-                {"path": "/draw_line", "method": "POST", "description": "Draw a line in Rhino"},
-                {"path": "/list_sliders", "method": "POST", "description": "List Grasshopper sliders"},
-                {"path": "/set_slider", "method": "POST", "description": "Set Grasshopper slider value"},
-                {"path": "/get_rhino_info", "method": "POST", "description": "Get Rhino session info"},
-                {"path": "/generate_truss", "method": "POST", "description": "Generate typical roof truss structure"}
-            ]
+            "endpoints": endpoints,
+            "dynamic_handlers": len(_dynamic_handlers)
         }
         self.send_json_response(info)
     
@@ -631,6 +215,9 @@ class RhinoBridgeServer:
     def start(self):
         """Start the HTTP server"""
         try:
+            # Initialize dynamic handlers before starting
+            initialize_dynamic_handlers()
+            
             self.server = HTTPServer((self.host, self.port), RhinoBridgeHandler)
             self.server_thread = threading.Thread(target=self.server.serve_forever)
             self.server_thread.daemon = True
@@ -640,11 +227,15 @@ class RhinoBridgeServer:
             print("Available endpoints:")
             print("  GET  /status       - Server status")
             print("  GET  /info         - Server information")
-            print("  POST /draw_line    - Draw a line in Rhino")
-            print("  POST /list_sliders - List Grasshopper sliders")
-            print("  POST /set_slider   - Set Grasshopper slider value")
-            print("  POST /get_rhino_info - Get Rhino session info")
-            print("  POST /generate_truss - Generate typical roof truss structure")
+            
+            # Show dynamic endpoints
+            if _dynamic_handlers:
+                print("Dynamic endpoints:")
+                for endpoint in sorted(_dynamic_handlers.keys()):
+                    print(f"  POST {endpoint}")
+            else:
+                print("No dynamic handlers loaded")
+            
             print("\nServer is running in background thread...")
             
         except Exception as e:
