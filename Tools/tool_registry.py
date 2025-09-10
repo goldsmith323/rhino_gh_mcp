@@ -11,12 +11,13 @@ Author: Hossein Zargar
 import inspect
 import importlib
 import os
-from typing import Dict, Any, List, Callable
+from typing import Dict, Any, List, Callable, Optional
 from functools import wraps
 
 # Global registries for discovered tools
 _rhino_tools = []
 _gh_tools = []
+_bridge_handlers = {}
 
 class ToolDefinition:
     """Represents a registered tool definition"""
@@ -99,6 +100,28 @@ def gh_tool(name: str = None, description: str = None):
     
     return decorator
 
+def bridge_handler(endpoint: str):
+    """
+    Decorator to register bridge endpoint handlers automatically.
+    
+    Usage:
+        @bridge_handler("/draw_line")
+        def handle_draw_line(data):
+            # Bridge endpoint implementation
+            return {"success": True, "result": "..."}
+    """
+    def decorator(func: Callable):
+        # Register in global bridge handlers registry
+        _bridge_handlers[endpoint] = func
+        
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+        
+        return wrapper
+    
+    return decorator
+
 def discover_tools() -> Dict[str, List[ToolDefinition]]:
     """
     Discover all registered tools by importing tool modules.
@@ -110,9 +133,10 @@ def discover_tools() -> Dict[str, List[ToolDefinition]]:
         Dictionary with 'rhino' and 'grasshopper' tool lists
     """
     # Clear existing registries
-    global _rhino_tools, _gh_tools
+    global _rhino_tools, _gh_tools, _bridge_handlers
     _rhino_tools.clear()
     _gh_tools.clear()
+    _bridge_handlers.clear()
     
     # Get the Tools directory path
     tools_dir = os.path.dirname(__file__)
@@ -158,11 +182,12 @@ def get_all_tools() -> List[Dict[str, Any]]:
 
 def get_tool_endpoints() -> List[str]:
     """Get all bridge endpoints needed for registered tools"""
-    endpoints = []
-    
-    for tool in _rhino_tools + _gh_tools:
-        # Extract endpoint from function source or use naming convention
-        endpoint_name = f"/{tool.name}"
-        endpoints.append(endpoint_name)
-    
-    return endpoints
+    return list(_bridge_handlers.keys())
+
+def get_bridge_handlers() -> Dict[str, Callable]:
+    """Get all registered bridge handlers"""
+    return _bridge_handlers.copy()
+
+def get_bridge_handler(endpoint: str) -> Optional[Callable]:
+    """Get a specific bridge handler by endpoint"""
+    return _bridge_handlers.get(endpoint)
