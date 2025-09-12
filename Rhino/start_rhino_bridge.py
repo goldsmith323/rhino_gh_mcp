@@ -8,7 +8,7 @@ the bridge server that communicates with the external MCP server.
 
 Usage:
 1. Open Rhino 8
-2. Open Script Editor (Tools > PythonScript > Edit)  
+2. Open Script Editor (Tools > Script > Edit)
 3. Load and run this script
 4. The bridge server will start and run in background
 
@@ -41,19 +41,19 @@ def main():
     print("Rhino/Grasshopper MCP Bridge Server")
     print("Author: Hossein Zargar")
     print("=" * 50)
-    
+
     # Check if server is already running
     existing_server = get_bridge_server()
     if existing_server and existing_server.is_running():
         print("Bridge server is already running!")
         print("To stop the server, run: stop_bridge_server()")
         return existing_server
-    
+
     # Start the server
     try:
         print("Starting bridge server...")
         server = start_bridge_server(host='localhost', port=8080)
-        
+
         if server and server.is_running():
             print("\n✓ Bridge server started successfully!")
             print("Server is running on: http://localhost:8080")
@@ -64,18 +64,18 @@ def main():
             print("  POST /list_sliders - List Grasshopper sliders")
             print("  POST /set_slider   - Set Grasshopper slider value")
             print("  POST /get_rhino_info - Get Rhino session info")
-            
+
             print("\nThe bridge server is now ready to receive requests from the MCP server.")
             print("You can now start the external MCP server and use it with Claude Desktop.")
-            
+
             print("\nTo stop the server later, run:")
             print("  stop_bridge_server()")
-            
+
             return server
         else:
             print("✗ Failed to start bridge server")
             return None
-            
+
     except Exception as e:
         print(f"✗ Error starting bridge server: {e}")
         return None
@@ -105,5 +105,5 @@ globals()['bridge_status'] = status
 
 print("\nQuick commands available:")
 print("  start_bridge()  - Start the bridge server")
-print("  stop_bridge()   - Stop the bridge server") 
+print("  stop_bridge()   - Stop the bridge server")
 print("  bridge_status() - Check server status")
