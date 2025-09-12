@@ -23,7 +23,11 @@ pip install -r requirements.txt
 3. Add to Claude Desktop config (see `config/MCP_CLIENT_SETUP.md`)
 4. Restart Claude Desktop
 
-### 3. Start MCP Server
+### 3. Start Rhino Bridge Server
+1. Open Rhino 8
+2. Follow the guide in `Rhino/README.md`
+
+### 4. Start MCP Server
 ```bash
 python main.py
 ```
@@ -38,7 +42,7 @@ The server will:
 
 Once configured, you can use these commands in Claude Desktop:
 - "Get Rhino information"
-- "Draw a line from 0,0,0 to 10,10,5"  
+- "Draw a line from 0,0,0 to 10,10,5"
 - "Generate a Pratt truss from 0,0,0 to 20,0,0 with depth 3 and 6 divisions"
 - "List Grasshopper sliders"
 - "Set Width slider to 25"
