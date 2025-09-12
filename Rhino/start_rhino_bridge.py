@@ -18,10 +18,14 @@ Author: Hossein Zargar
 import sys
 import os
 
-# Add the current directory to Python path to import our modules
+# Add the current directory and Tools directory to Python path to import our modules
 current_dir = os.path.dirname(os.path.abspath(__file__))
+tools_dir = os.path.join(os.path.dirname(current_dir), 'Tools')
+
 if current_dir not in sys.path:
     sys.path.append(current_dir)
+if tools_dir not in sys.path:
+    sys.path.append(tools_dir)
 
 try:
     from rhino_bridge_server import start_bridge_server, stop_bridge_server, get_bridge_server
