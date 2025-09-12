@@ -19,9 +19,10 @@ pip install -r requirements.txt
 
 ### 2. Configure Claude Desktop
 1. Copy the configuration from `config/mcp_client_config.json`
-2. Update the path to point to your `main.py` file
-3. Add to Claude Desktop config (see `config/MCP_CLIENT_SETUP.md`)
-4. Restart Claude Desktop
+2. Update the path for "command" to point to the python executable inside your virtual environment (or just put 'python' if no virtual env being used)
+3. Update the path for "args" to point to your `main.py` file
+4. Add to Claude Desktop config (see `config/MCP_CLIENT_SETUP.md`)
+5. Restart Claude Desktop
 
 ### 3. Start Rhino Bridge Server
 1. Open Rhino 8
