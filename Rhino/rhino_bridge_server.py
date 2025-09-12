@@ -20,8 +20,9 @@ import sys
 import os
 
 # Add Tools directory to path for dynamic handler discovery
-tools_path = os.path.join(os.path.dirname(__file__), '..', 'Tools')
-sys.path.append(tools_path)
+tools_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'Tools'))
+if tools_path not in sys.path:
+    sys.path.append(tools_path)
 
 # Try to import Rhino modules - these should be available inside Rhino
 try:
