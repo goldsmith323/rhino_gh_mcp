@@ -34,7 +34,7 @@ cd MCP/
 pip install -r requirements.txt
 ```
 
-### 2. Configure Claude Desktop
+### 2. Configure MCP Client
 Follow the setup guide in `MCP/config/MCP_CLIENT_SETUP.md`
 
 ### 3. Start Rhino Bridge Server
@@ -48,10 +48,10 @@ python main.py
 ```
 
 ### 5. Test Integration
-In Claude Desktop:
-- "Get Rhino information"
-- "Draw a line from 0,0,0 to 10,10,5"
-- "List Grasshopper sliders"
+Test the integration:
+- Get Rhino information
+- Draw a line from 0,0,0 to 10,10,5
+- List Grasshopper sliders
 
 ## 🔧 For Developers
 
@@ -81,5 +81,32 @@ def handle_my_endpoint(data):
 After setup, verify everything works:
 1. Bridge server responds: `http://localhost:8080/status`
 2. MCP server starts without errors
-3. Claude Desktop shows available tools
+3. MCP client shows available tools
 4. Tools execute successfully
+
+## 📚 Available Tools
+
+### Rhino Tools (5)
+- `draw_line_rhino` - Draw lines in Rhino 3D
+- `get_rhino_info` - Get Rhino session information
+- `typical_roof_truss_generator` - Generate parametric roof trusses
+- `get_selected_rhino_objects` - Get selected objects information
+- `get_rhino_object_geometry` - Extract geometry data from Rhino objects
+
+### Grasshopper Tools (16)
+- `list_grasshopper_sliders` - List all slider components
+- `set_grasshopper_slider` - Set slider values
+- `set_multiple_grasshopper_sliders` - Batch update sliders
+- `analyze_grasshopper_sliders` - Analyze slider connections
+- `analyze_grasshopper_inputs_with_context` - Analyze inputs with group and annotation context
+- `analyze_grasshopper_outputs_with_context` - Analyze outputs with context
+- `get_grasshopper_overview` - Get file overview
+- `get_grasshopper_components` - List all components
+- `list_grasshopper_valuelist_components` - List dropdown components
+- `set_grasshopper_valuelist_selection` - Set dropdown selections
+- `list_grasshopper_panels` - List panel components
+- `set_grasshopper_panel_text` - Update panel text
+- `get_grasshopper_panel_data` - Extract panel data
+- `set_grasshopper_geometry_input` - Set geometry from Rhino to Grasshopper
+- `extract_grasshopper_geometry_output` - Extract and bake Grasshopper outputs
+- `debug_grasshopper_state` - Get debugging information
