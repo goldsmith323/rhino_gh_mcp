@@ -624,12 +624,239 @@ def create_truss_geometry(start_point, end_point, depth, divisions, truss_type, 
         print(f"Error in create_truss_geometry: {str(e)}")
         return []
 
+@rhino_tool(
+    name="get_selected_rhino_objects",
+    description=(
+        "Get information about currently selected objects in Rhino. This tool retrieves "
+        "details about user-selected geometry including object types (curves, surfaces, points, etc.) "
+        "and their IDs. Useful for understanding what the user has selected before feeding to Grasshopper.\n\n"
+        "**Returns:**\n"
+        "Dictionary containing list of selected objects with their types and IDs."
+    )
+)
+async def get_selected_rhino_objects() -> Dict[str, Any]:
+    """
+    Get information about selected objects in Rhino via HTTP bridge.
+
+    Returns:
+        Dict containing selected object information
+    """
+
+    return call_bridge_api("/get_selected_objects", {})
+
+@bridge_handler("/get_selected_objects")
+def handle_get_selected_objects(data):
+    """Bridge handler for getting selected objects"""
+    try:
+        import rhinoscriptsyntax as rs
+
+        selected_ids = rs.SelectedObjects()
+        if not selected_ids:
+            return {
+                "success": True,
+                "selected_objects": [],
+                "count": 0,
+                "message": "No objects currently selected in Rhino"
+            }
+
+        objects_info = []
+        for obj_id in selected_ids:
+            obj_type = rs.ObjectType(obj_id)
+            obj_info = {
+                "id": str(obj_id),
+                "type": obj_type,
+                "type_name": "",
+                "layer": rs.ObjectLayer(obj_id),
+                "name": rs.ObjectName(obj_id) or "Unnamed"
+            }
+
+            # Get friendly type name
+            if obj_type == 4:  # Curve
+                obj_info["type_name"] = "Curve"
+                obj_info["is_closed"] = rs.IsCurveClosed(obj_id)
+                obj_info["degree"] = rs.CurveDegree(obj_id)
+            elif obj_type == 8 or obj_type == 16:  # Surface or Polysurface
+                obj_info["type_name"] = "Surface/Brep"
+                obj_info["is_closed"] = rs.IsPolysurfaceClosed(obj_id)
+            elif obj_type == 1:  # Point
+                obj_info["type_name"] = "Point"
+                point = rs.PointCoordinates(obj_id)
+                obj_info["coordinates"] = [point.X, point.Y, point.Z]
+            elif obj_type == 32:  # Mesh
+                obj_info["type_name"] = "Mesh"
+            else:
+                obj_info["type_name"] = f"Type_{obj_type}"
+
+            objects_info.append(obj_info)
+
+        return {
+            "success": True,
+            "selected_objects": objects_info,
+            "count": len(objects_info),
+            "message": f"Found {len(objects_info)} selected object(s)"
+        }
+
+    except ImportError:
+        return {
+            "success": False,
+            "error": "Rhino is not available"
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Error getting selected objects: {str(e)}"
+        }
+
+@rhino_tool(
+    name="get_rhino_object_geometry",
+    description=(
+        "Extract detailed geometry data from a Rhino object by its ID. This retrieves "
+        "the actual geometric data (points, control points, etc.) that can be used to "
+        "transfer geometry to Grasshopper.\n\n"
+        "**Parameters:**\n"
+        "- **object_id** (str): The GUID/ID of the Rhino object\n"
+        "\n**Returns:**\n"
+        "Dictionary containing detailed geometry data including points and curve/surface information."
+    )
+)
+async def get_rhino_object_geometry(object_id: str) -> Dict[str, Any]:
+    """
+    Get detailed geometry data from a Rhino object via HTTP bridge.
+
+    Args:
+        object_id: GUID/ID of the Rhino object
+
+    Returns:
+        Dict containing geometry data
+    """
+
+    request_data = {"object_id": object_id}
+
+    return call_bridge_api("/get_object_geometry", request_data)
+
+@bridge_handler("/get_object_geometry")
+def handle_get_object_geometry(data):
+    """Bridge handler for getting object geometry"""
+    try:
+        import rhinoscriptsyntax as rs
+        import Rhino
+        import scriptcontext as sc
+
+        object_id = data.get('object_id', '')
+        if not object_id:
+            return {
+                "success": False,
+                "error": "No object_id provided"
+            }
+
+        # Convert string to GUID
+        try:
+            import System
+            guid = System.Guid(object_id)
+        except:
+            return {
+                "success": False,
+                "error": f"Invalid object_id format: {object_id}"
+            }
+
+        # Check if object exists
+        if not rs.IsObject(guid):
+            return {
+                "success": False,
+                "error": f"Object with ID {object_id} not found"
+            }
+
+        obj_type = rs.ObjectType(guid)
+        geometry_data = {
+            "id": object_id,
+            "type": obj_type,
+            "type_name": "",
+            "data": {}
+        }
+
+        # Get the actual Rhino geometry object
+        rhino_obj = sc.doc.Objects.FindId(guid)
+        if rhino_obj:
+            geom = rhino_obj.Geometry
+
+            if obj_type == 4:  # Curve
+                geometry_data["type_name"] = "Curve"
+                curve = geom
+
+                # Get control points
+                if hasattr(curve, 'Points') and curve.Points:
+                    control_points = []
+                    for i in range(curve.Points.Count):
+                        pt = curve.Points[i]
+                        control_points.append({
+                            "x": float(pt.Location.X),
+                            "y": float(pt.Location.Y),
+                            "z": float(pt.Location.Z)
+                        })
+                    geometry_data["data"]["control_points"] = control_points
+
+                # Get curve properties
+                geometry_data["data"]["degree"] = curve.Degree if hasattr(curve, 'Degree') else None
+                geometry_data["data"]["is_closed"] = rs.IsCurveClosed(guid)
+                geometry_data["data"]["domain_start"] = float(curve.Domain.T0)
+                geometry_data["data"]["domain_end"] = float(curve.Domain.T1)
+
+                # Sample points along curve
+                sample_points = []
+                for t in [0.0, 0.25, 0.5, 0.75, 1.0]:
+                    param = curve.Domain.ParameterAt(t)
+                    pt = curve.PointAt(param)
+                    sample_points.append({
+                        "x": float(pt.X),
+                        "y": float(pt.Y),
+                        "z": float(pt.Z),
+                        "t": t
+                    })
+                geometry_data["data"]["sample_points"] = sample_points
+
+            elif obj_type == 1:  # Point
+                geometry_data["type_name"] = "Point"
+                point = rs.PointCoordinates(guid)
+                geometry_data["data"]["coordinates"] = {
+                    "x": float(point.X),
+                    "y": float(point.Y),
+                    "z": float(point.Z)
+                }
+
+            elif obj_type in [8, 16]:  # Surface or Polysurface
+                geometry_data["type_name"] = "Surface/Brep"
+                geometry_data["data"]["is_closed"] = rs.IsPolysurfaceClosed(guid)
+
+                # Get bounding box
+                bbox = rs.BoundingBox(guid)
+                if bbox:
+                    geometry_data["data"]["bounding_box"] = [
+                        {"x": float(pt.X), "y": float(pt.Y), "z": float(pt.Z)}
+                        for pt in bbox
+                    ]
+
+        return {
+            "success": True,
+            "geometry": geometry_data,
+            "message": f"Retrieved geometry data for {geometry_data['type_name']}"
+        }
+
+    except ImportError as e:
+        return {
+            "success": False,
+            "error": f"Rhino is not available: {str(e)}"
+        }
+    except Exception as e:
+        import traceback
+        return {
+            "success": False,
+            "error": f"Error getting object geometry: {str(e)}",
+            "traceback": traceback.format_exc()
+        }
+
 # All tools are now automatically registered using the @rhino_tool decorator
 # Simply add @rhino_tool decorator to any new function and it will be available in MCP
 #
-# Future Rhino tools can be added here:
-# - draw_curve_rhino
-# - create_surface_rhino  
-# - extrude_curve_rhino
-# - boolean_operations_rhino
-# - etc.
+# New tools added:
+# - get_selected_rhino_objects - Get currently selected objects
+# - get_rhino_object_geometry - Extract detailed geometry data
