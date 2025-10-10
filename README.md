@@ -55,8 +55,8 @@ Test the integration:
 
 ## 🔧 For Developers
 
-### Adding New Tools (Fully Dynamic System)
-**NEW**: Both MCP tools AND bridge endpoints are automatically discovered! Add two decorators and everything is handled automatically.
+### Adding New Tools
+Both MCP tools and bridge endpoints are automatically discovered using decorators.
 
 ```python
 # MCP tool (client-side)

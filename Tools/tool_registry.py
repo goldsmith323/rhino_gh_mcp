@@ -4,8 +4,6 @@ Tool Registry and Decorator System
 This module provides decorators and auto-discovery functionality for MCP tools.
 Developers can simply use @rhino_tool or @gh_tool decorators to register tools
 without manually updating registration lists.
-
-Author: Hossein Zargar
 """
 
 import inspect
@@ -102,8 +100,8 @@ def gh_tool(name: str = None, description: str = None):
 
 def bridge_handler(endpoint: str):
     """
-    Decorator to register bridge endpoint handlers automatically.
-    
+    Decorator to register bridge endpoint handlers automatically with comprehensive error handling.
+
     Usage:
         @bridge_handler("/draw_line")
         def handle_draw_line(data):
@@ -111,24 +109,98 @@ def bridge_handler(endpoint: str):
             return {"success": True, "result": "..."}
     """
     def decorator(func: Callable):
-        # Register in global bridge handlers registry
-        _bridge_handlers[endpoint] = func
-        
         @wraps(func)
         def wrapper(*args, **kwargs):
-            return func(*args, **kwargs)
-        
+            import traceback
+            import sys
+
+            try:
+                # Log the handler call for debugging
+                print(f"[BRIDGE] Executing handler for endpoint: {endpoint}")
+                print(f"[BRIDGE] Handler function: {func.__name__}")
+                print(f"[BRIDGE] Request data: {args[0] if args else kwargs}")
+
+                # Execute the actual handler
+                result = func(*args, **kwargs)
+
+                # Validate that result is a dictionary
+                if not isinstance(result, dict):
+                    error_msg = f"Handler {func.__name__} returned non-dict type: {type(result).__name__}"
+                    print(f"[BRIDGE ERROR] {error_msg}")
+                    return {
+                        "success": False,
+                        "error": error_msg,
+                        "error_type": "InvalidReturnType",
+                        "endpoint": endpoint,
+                        "handler_function": func.__name__,
+                        "returned_type": str(type(result)),
+                        "debug_hint": "Bridge handlers must return a dictionary with at least a 'success' key"
+                    }
+
+                # Ensure the result has a success field
+                if 'success' not in result:
+                    print(f"[BRIDGE WARNING] Handler {func.__name__} returned dict without 'success' field. Adding it.")
+                    result['success'] = True
+
+                print(f"[BRIDGE] Handler {func.__name__} completed successfully")
+                return result
+
+            except Exception as e:
+                # Comprehensive error handling
+                error_traceback = traceback.format_exc()
+                error_type = type(e).__name__
+                error_msg = str(e)
+
+                # Print detailed error to console
+                print(f"[BRIDGE ERROR] Exception in handler {func.__name__} for endpoint {endpoint}")
+                print(f"[BRIDGE ERROR] Exception type: {error_type}")
+                print(f"[BRIDGE ERROR] Exception message: {error_msg}")
+                print(f"[BRIDGE ERROR] Request data: {args[0] if args else kwargs}")
+                print(f"[BRIDGE ERROR] Full traceback:")
+                print(error_traceback)
+
+                # Extract file and line number from traceback
+                # Look for any .py file in the Tools directory
+                tb_lines = error_traceback.split('\n')
+                file_line_info = "Unknown"
+                tools_dir = os.path.dirname(__file__)
+                for line in tb_lines:
+                    if 'File' in line and '.py' in line:
+                        # Check if it's a file in the Tools directory
+                        if 'Tools' in line or tools_dir in line:
+                            file_line_info = line.strip()
+                            break
+
+                # Return comprehensive error information
+                return {
+                    "success": False,
+                    "error": f"{error_type}: {error_msg}",
+                    "error_type": error_type,
+                    "error_message": error_msg,
+                    "endpoint": endpoint,
+                    "handler_function": func.__name__,
+                    "file_line": file_line_info,
+                    "traceback": error_traceback,
+                    "traceback_lines": tb_lines[-10:],  # Last 10 lines of traceback
+                    "request_data": args[0] if args else kwargs,
+                    "python_version": sys.version,
+                    "debug_hint": "An exception occurred in the bridge handler. See 'traceback' field for full details and check Rhino Python console."
+                }
+
+        # Register the wrapped function in the handlers registry
+        _bridge_handlers[endpoint] = wrapper
         return wrapper
-    
+
     return decorator
 
 def discover_tools() -> Dict[str, List[ToolDefinition]]:
     """
     Discover all registered tools by importing tool modules.
-    
-    This function imports all Python files in the Tools directory,
-    which triggers the decorator registration.
-    
+
+    This function dynamically imports all Python files in the Tools directory,
+    which triggers the decorator registration. It handles module reloading to
+    ensure new tools are discovered even if the module was previously imported.
+
     Returns:
         Dictionary with 'rhino' and 'grasshopper' tool lists
     """
@@ -137,32 +209,50 @@ def discover_tools() -> Dict[str, List[ToolDefinition]]:
     _rhino_tools.clear()
     _gh_tools.clear()
     _bridge_handlers.clear()
-    
+
     # Get the Tools directory path
     tools_dir = os.path.dirname(__file__)
-    
+
+    print(f"[DISCOVERY] Scanning Tools directory: {tools_dir}")
+
     # Import all Python modules in Tools directory
+    discovered_files = []
     for filename in os.listdir(tools_dir):
         if filename.endswith('.py') and filename != '__init__.py' and filename != 'tool_registry.py':
-            module_name = filename[:-3]  # Remove .py extension
+            discovered_files.append(filename)
+
+    print(f"[DISCOVERY] Found {len(discovered_files)} tool files: {', '.join(discovered_files)}")
+
+    for filename in discovered_files:
+        module_name = filename[:-3]  # Remove .py extension
+        try:
+            # Import the module to trigger decorator registration
+            # Use importlib.reload to ensure we get the latest version
+            original_cwd = os.getcwd()
             try:
-                # Import the module to trigger decorator registration
-                # First try with current working directory context
-                original_cwd = os.getcwd()
+                os.chdir(tools_dir)
+
+                # Try to import the module
                 try:
-                    os.chdir(tools_dir)
-                    importlib.import_module(module_name)
-                    print(f"Discovered tools from: {module_name}")
+                    module = importlib.import_module(module_name)
+                    # Reload if already imported to get latest changes
+                    importlib.reload(module)
+                    print(f"[DISCOVERY] Loaded tools from: {module_name}.py")
                 except ImportError:
                     # Try with Tools prefix
                     os.chdir(original_cwd)
-                    importlib.import_module(f'Tools.{module_name}')
-                    print(f"Discovered tools from: {module_name} (Tools prefix)")
-                finally:
-                    os.chdir(original_cwd)
-            except Exception as e:
-                print(f"Warning: Could not import {module_name}: {e}")
-    
+                    module = importlib.import_module(f'Tools.{module_name}')
+                    importlib.reload(module)
+                    print(f"[DISCOVERY] Loaded tools from: {module_name}.py (Tools prefix)")
+            finally:
+                os.chdir(original_cwd)
+        except Exception as e:
+            print(f"[DISCOVERY] Warning: Could not import {module_name}.py: {e}")
+            import traceback
+            print(traceback.format_exc())
+
+    print(f"[DISCOVERY] Registered {len(_rhino_tools)} Rhino tools, {len(_gh_tools)} Grasshopper tools, {len(_bridge_handlers)} bridge handlers")
+
     return {
         'rhino': _rhino_tools,
         'grasshopper': _gh_tools

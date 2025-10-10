@@ -5,8 +5,6 @@ This module contains all Rhino-specific MCP tools that communicate with the
 Rhino bridge server to execute operations within Rhino 3D.
 
 Tools are automatically registered using the @rhino_tool decorator.
-
-Author: Hossein Zargar
 """
 
 import asyncio
