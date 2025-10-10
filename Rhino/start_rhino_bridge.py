@@ -11,8 +11,6 @@ Usage:
 2. Open Script Editor (Tools > Script > Edit)
 3. Load and run this script
 4. The bridge server will start and run in background
-
-Author: Hossein Zargar
 """
 
 import sys
@@ -39,7 +37,6 @@ def main():
     """Main function to handle bridge server startup"""
     print("=" * 50)
     print("Rhino/Grasshopper MCP Bridge Server")
-    print("Author: Hossein Zargar")
     print("=" * 50)
 
     # Check if server is already running

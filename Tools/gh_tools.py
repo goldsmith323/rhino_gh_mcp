@@ -5,8 +5,6 @@ This module contains all Grasshopper-specific MCP tools that communicate with th
 Rhino bridge server to execute parametric operations within Grasshopper.
 
 Tools are automatically registered using the @gh_tool decorator.
-
-Author: Hossein Zargar
 """
 
 import asyncio
@@ -1662,10 +1660,24 @@ def handle_analyze_inputs_context(data):
         for obj in gh_doc.Objects:
             try:
                 obj_guid = str(obj.InstanceGuid)
+
+                # Convert bounds to JSON-serializable format
+                bounds_data = None
+                if hasattr(obj.Attributes, 'Bounds'):
+                    bounds_rect = obj.Attributes.Bounds
+                    bounds_data = {
+                        "left": float(bounds_rect.Left),
+                        "right": float(bounds_rect.Right),
+                        "top": float(bounds_rect.Top),
+                        "bottom": float(bounds_rect.Bottom),
+                        "width": float(bounds_rect.Width),
+                        "height": float(bounds_rect.Height)
+                    }
+
                 obj_bounds = {
                     "x": float(obj.Attributes.Pivot.X),
                     "y": float(obj.Attributes.Pivot.Y),
-                    "bounds": obj.Attributes.Bounds if hasattr(obj.Attributes, 'Bounds') else None
+                    "bounds": bounds_data
                 }
 
                 # Check if object is in any group

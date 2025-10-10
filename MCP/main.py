@@ -9,8 +9,6 @@ A Model Context Protocol (MCP) server that provides tools for interacting with:
 This server uses an HTTP bridge architecture to communicate with Rhino 8, solving
 Python version compatibility issues between MCP (requires Python 3.10+) and
 Rhino's built-in Python 3.9.
-
-Author: Hossein Zargar
 """
 
 import logging

@@ -8,8 +8,6 @@ Rhino/Grasshopper operations, returning results via HTTP responses.
 
 This server provides a dynamic HTTP API that automatically discovers and registers
 endpoints from tool modules (rhino_tools.py, gh_tools.py).
-
-Author: Hossein Zargar
 """
 
 import json
@@ -101,15 +99,19 @@ class RhinoBridgeHandler(BaseHTTPRequestHandler):
     
     def do_POST(self):
         """Handle POST requests for Rhino operations"""
+        import traceback
+        endpoint = "unknown"
+        request_data = None
+
         try:
             # Initialize dynamic handlers if not done yet
             if not _handlers_initialized:
                 initialize_dynamic_handlers()
-            
+
             # Parse the request path
             parsed_path = urllib.parse.urlparse(self.path)
             endpoint = parsed_path.path
-            
+
             # Read request body
             content_length = int(self.headers.get('Content-Length', 0))
             if content_length > 0:
@@ -117,7 +119,7 @@ class RhinoBridgeHandler(BaseHTTPRequestHandler):
                 request_data = json.loads(post_data.decode('utf-8'))
             else:
                 request_data = {}
-            
+
             # Try dynamic handler
             if endpoint in _dynamic_handlers:
                 try:
@@ -126,16 +128,71 @@ class RhinoBridgeHandler(BaseHTTPRequestHandler):
                     self.send_json_response(result)
                     return
                 except Exception as e:
-                    self.send_error_response(500, f"Handler error for {endpoint}: {str(e)}")
+                    # Detailed error logging for handler failures
+                    error_traceback = traceback.format_exc()
+                    print(f"ERROR: Handler exception for {endpoint}")
+                    print(f"Exception type: {type(e).__name__}")
+                    print(f"Exception message: {str(e)}")
+                    print(f"Request data: {request_data}")
+                    print(f"Full traceback:\n{error_traceback}")
+
+                    error_response = {
+                        "success": False,
+                        "error": f"Handler error: {str(e)}",
+                        "error_type": type(e).__name__,
+                        "endpoint": endpoint,
+                        "traceback": error_traceback,
+                        "request_data": request_data,
+                        "debug_hint": "An exception occurred in the Rhino bridge handler. Check the Rhino Python console for full traceback."
+                    }
+                    self.send_json_response(error_response, 500)
                     return
-            
+
             # If no dynamic handler found, return 404
-            self.send_error_response(404, f"Unknown endpoint: {endpoint}")
-                
-        except json.JSONDecodeError:
-            self.send_error_response(400, "Invalid JSON in request body")
+            available_endpoints = sorted(_dynamic_handlers.keys())
+            error_response = {
+                "success": False,
+                "error": f"Unknown endpoint: {endpoint}",
+                "error_type": "EndpointNotFound",
+                "endpoint": endpoint,
+                "available_endpoints": available_endpoints,
+                "debug_hint": f"The endpoint '{endpoint}' is not registered. Check if the handler is properly decorated with @bridge_handler."
+            }
+            self.send_json_response(error_response, 404)
+
+        except json.JSONDecodeError as e:
+            error_traceback = traceback.format_exc()
+            print(f"ERROR: JSON decode error for {endpoint}")
+            print(f"Traceback:\n{error_traceback}")
+
+            error_response = {
+                "success": False,
+                "error": "Invalid JSON in request body",
+                "error_type": "JSONDecodeError",
+                "error_details": str(e),
+                "endpoint": endpoint,
+                "debug_hint": "The request body is not valid JSON. Check the request formatting."
+            }
+            self.send_json_response(error_response, 400)
+
         except Exception as e:
-            self.send_error_response(500, f"Internal server error: {str(e)}")
+            error_traceback = traceback.format_exc()
+            print(f"ERROR: Unexpected server error for {endpoint}")
+            print(f"Exception type: {type(e).__name__}")
+            print(f"Exception message: {str(e)}")
+            print(f"Request data: {request_data}")
+            print(f"Full traceback:\n{error_traceback}")
+
+            error_response = {
+                "success": False,
+                "error": f"Internal server error: {str(e)}",
+                "error_type": type(e).__name__,
+                "endpoint": endpoint,
+                "traceback": error_traceback,
+                "request_data": request_data,
+                "debug_hint": "An unexpected error occurred in the bridge server. Check the Rhino Python console for details."
+            }
+            self.send_json_response(error_response, 500)
     
     def send_status_response(self):
         """Send server status"""
