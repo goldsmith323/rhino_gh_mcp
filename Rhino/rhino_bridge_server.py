@@ -22,6 +22,34 @@ tools_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'Tool
 if tools_path not in sys.path:
     sys.path.append(tools_path)
 
+# Load environment variables for configuration
+DEBUG_MODE = False
+try:
+    # Try to load from .env file in project root
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    env_file = os.path.join(project_root, '.env')
+
+    if os.path.exists(env_file):
+        with open(env_file, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    key, value = line.split('=', 1)
+                    if key.strip() == 'DEBUG_MODE':
+                        DEBUG_MODE = value.strip().lower() == 'true'
+                        print(f"DEBUG_MODE loaded from .env: {DEBUG_MODE}")
+                        break
+    else:
+        # Check environment variable as fallback
+        DEBUG_MODE = os.environ.get('DEBUG_MODE', 'false').lower() == 'true'
+        if DEBUG_MODE:
+            print(f"DEBUG_MODE loaded from environment: {DEBUG_MODE}")
+except Exception as e:
+    print(f"Warning: Could not load DEBUG_MODE from .env: {e}")
+    DEBUG_MODE = False
+
+print(f"Bridge Server Running with DEBUG_MODE: {DEBUG_MODE}")
+
 # Try to import Rhino modules - these should be available inside Rhino
 try:
     import rhinoscriptsyntax as rs

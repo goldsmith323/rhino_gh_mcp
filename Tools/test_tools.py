@@ -15,6 +15,37 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'MCP'))
 from bridge_client import call_bridge_api
 from tool_registry import rhino_tool, gh_tool, bridge_handler
 
+# ============================================================================
+# DEBUG_MODE Configuration
+# ============================================================================
+# Note: Test tools intentionally return full information regardless of DEBUG_MODE
+# since they are diagnostic tools meant to verify system functionality.
+
+DEBUG_MODE = False
+try:
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    env_file = os.path.join(project_root, '.env')
+    if os.path.exists(env_file):
+        with open(env_file, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    key, value = line.split('=', 1)
+                    if key.strip() == 'DEBUG_MODE':
+                        DEBUG_MODE = value.strip().lower() == 'true'
+                        break
+except:
+    DEBUG_MODE = False
+
+def filter_debug_response(response: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Filter response based on DEBUG_MODE.
+    Note: Test tools always return full data for diagnostic purposes.
+    This function is provided for consistency but not applied to test handlers.
+    """
+    # Test tools intentionally bypass filtering
+    return response
+
 
 # ============================================================================
 # Test Tool 1: Simple Echo
