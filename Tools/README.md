@@ -8,6 +8,63 @@ This directory contains all the tool definitions organized by category. This is 
 - **`gh_tools.py`** - All Grasshopper parametric tools (using auto-discovery decorators)
 - **`tool_registry.py`** - Auto-discovery system with @rhino_tool and @gh_tool decorators
 
+## Configuration
+
+### Debug Mode
+
+Control the verbosity of tool responses using the `DEBUG_MODE` environment variable.
+
+**Setup:**
+1. Copy `.env.example` to `.env` in the project root
+2. Edit `.env` and set `DEBUG_MODE=true` or `DEBUG_MODE=false`
+3. Restart the Rhino bridge server
+
+**Behavior:**
+
+- **`DEBUG_MODE=false`** (Default - Production Mode):
+  - Returns minimal information to save tokens
+  - Includes: `success`, `error`, `message`, essential data only
+  - Excludes: `debug_log`, detailed step info, `traceback` (unless error)
+  - **Use for:** Normal operations, production use
+
+- **`DEBUG_MODE=true`** (Debugging Mode):
+  - Returns comprehensive debugging information
+  - Includes: Full `debug_log`, step-by-step execution traces, `traceback` on errors
+  - Includes: File verification steps, timing info, detailed operation logs
+  - **Use for:** Development, troubleshooting, understanding what's happening
+
+**Example Response Comparison:**
+
+```json
+// DEBUG_MODE=false (Minimal)
+{
+  "success": true,
+  "message": "Opened Primary Truss Generator.gh",
+  "file_name": "Primary Truss Generator.gh",
+  "object_count": 81
+}
+
+// DEBUG_MODE=true (Full Debug)
+{
+  "success": true,
+  "message": "Opened Primary Truss Generator.gh",
+  "file_name": "Primary Truss Generator.gh",
+  "object_count": 81,
+  "debug_log": [
+    "Grasshopper already running",
+    "Attempting to open: C:\\...\\Primary Truss Generator.gh",
+    "File exists: True",
+    "File size: 19501 bytes",
+    "Calling gh.OpenDocument()...",
+    "Attempt 1: Active document is Primary Truss Generator.gh",
+    "✓ Successfully opened and verified: Primary Truss Generator.gh",
+    "Document has 81 objects"
+  ]
+}
+```
+
+**Recommendation:** Keep `DEBUG_MODE=false` for normal use to reduce token usage. Enable temporarily when troubleshooting issues.
+
 ## Current Tools
 
 ### Rhino Tools

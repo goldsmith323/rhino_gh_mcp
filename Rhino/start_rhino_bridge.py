@@ -63,7 +63,7 @@ def main():
             print("  POST /get_rhino_info - Get Rhino session info")
 
             print("\nThe bridge server is now ready to receive requests from the MCP server.")
-            print("You can now start the external MCP server and use it with Claude Desktop.")
+            print("You can now start the external MCP server and connect with your MCP client.")
 
             print("\nTo stop the server later, run:")
             print("  stop_bridge_server()")

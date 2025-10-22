@@ -23,6 +23,54 @@ except ImportError:
     # Fallback for direct import
     from tool_registry import rhino_tool, bridge_handler
 
+# Get DEBUG_MODE from environment
+DEBUG_MODE = False
+try:
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    env_file = os.path.join(project_root, '.env')
+
+    if os.path.exists(env_file):
+        with open(env_file, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    key, value = line.split('=', 1)
+                    if key.strip() == 'DEBUG_MODE':
+                        DEBUG_MODE = value.strip().lower() == 'true'
+                        break
+    else:
+        DEBUG_MODE = os.environ.get('DEBUG_MODE', 'false').lower() == 'true'
+except:
+    DEBUG_MODE = False
+
+def filter_debug_response(response: Dict[str, Any]) -> Dict[str, Any]:
+    """Filter response based on DEBUG_MODE to save tokens"""
+    if DEBUG_MODE:
+        return response
+
+    filtered = {}
+    essential_keys = [
+        'success', 'error', 'message', 'warning',
+        'line_id', 'point_count', 'truss_type', 'member_count',
+        'version', 'document_name', 'unit_system'
+    ]
+
+    for key in essential_keys:
+        if key in response:
+            filtered[key] = response[key]
+
+    # Include debug info only on errors
+    if not response.get('success', True):
+        if 'traceback' in response:
+            filtered['traceback'] = response['traceback']
+
+    # Copy unhandled keys
+    for key, value in response.items():
+        if key not in essential_keys and key not in ['traceback']:
+            filtered[key] = value
+
+    return filtered
+
 @rhino_tool(
     name="draw_line_rhino",
     description=(
@@ -97,7 +145,7 @@ def handle_draw_line(data):
         
         if line_id:
             line_length = rs.CurveLength(line_id)
-            return {
+            result = {
                 "success": True,
                 "line_id": str(line_id),
                 "start_point": start_point,
@@ -105,24 +153,28 @@ def handle_draw_line(data):
                 "length": line_length,
                 "message": f"Line created successfully with length {line_length:.2f}"
             }
+            return filter_debug_response(result)
         else:
-            return {
+            result = {
                 "success": False,
                 "error": "Failed to create line in Rhino",
                 "line_id": None
             }
+            return filter_debug_response(result)
     except ImportError:
-        return {
+        result = {
             "success": False,
             "error": "Rhino is not available",
             "line_id": None
         }
+        return filter_debug_response(result)
     except Exception as e:
-        return {
+        result = {
             "success": False,
             "error": f"Error drawing line: {str(e)}",
             "line_id": None
         }
+        return filter_debug_response(result)
 
 @rhino_tool(
     name="get_rhino_info",
@@ -170,23 +222,26 @@ def handle_get_rhino_info(data):
         except Exception as e:
             info["rhino_error"] = str(e)
         
-        return {
+        result = {
             "success": True,
             "info": info,
             "message": "Rhino information retrieved successfully"
         }
+        return filter_debug_response(result)
     except ImportError:
-        return {
+        result = {
             "success": False,
             "error": "Rhino is not available",
             "info": {}
         }
+        return filter_debug_response(result)
     except Exception as e:
-        return {
+        result = {
             "success": False,
             "error": f"Error getting Rhino info: {str(e)}",
             "info": {}
         }
+        return filter_debug_response(result)
 
 @rhino_tool(
     name="typical_roof_truss_generator",
@@ -323,7 +378,7 @@ def handle_generate_truss(data):
         )
         
         if truss_members:
-            return {
+            result = {
                 "success": True,
                 "truss_members": truss_members,
                 "num_members": len(truss_members),
@@ -332,24 +387,28 @@ def handle_generate_truss(data):
                 "truss_type": truss_type,
                 "message": f"{truss_type} truss created successfully with {len(truss_members)} members"
             }
+            return filter_debug_response(result)
         else:
-            return {
+            result = {
                 "success": False,
                 "error": "Failed to create truss in Rhino",
                 "truss_members": []
             }
+            return filter_debug_response(result)
     except ImportError:
-        return {
+        result = {
             "success": False,
             "error": "Rhino is not available",
             "truss_members": []
         }
+        return filter_debug_response(result)
     except Exception as e:
-        return {
+        result = {
             "success": False,
             "error": f"Error generating truss: {str(e)}",
             "truss_members": []
         }
+        return filter_debug_response(result)
 
 def clear_previous_trusses():
     """Clear previously generated truss objects"""
@@ -650,12 +709,13 @@ def handle_get_selected_objects(data):
 
         selected_ids = rs.SelectedObjects()
         if not selected_ids:
-            return {
+            result = {
                 "success": True,
                 "selected_objects": [],
                 "count": 0,
                 "message": "No objects currently selected in Rhino"
             }
+            return filter_debug_response(result)
 
         objects_info = []
         for obj_id in selected_ids:
@@ -687,23 +747,26 @@ def handle_get_selected_objects(data):
 
             objects_info.append(obj_info)
 
-        return {
+        result = {
             "success": True,
             "selected_objects": objects_info,
             "count": len(objects_info),
             "message": f"Found {len(objects_info)} selected object(s)"
         }
+        return filter_debug_response(result)
 
     except ImportError:
-        return {
+        result = {
             "success": False,
             "error": "Rhino is not available"
         }
+        return filter_debug_response(result)
     except Exception as e:
-        return {
+        result = {
             "success": False,
             "error": f"Error getting selected objects: {str(e)}"
         }
+        return filter_debug_response(result)
 
 @rhino_tool(
     name="get_rhino_object_geometry",
@@ -742,27 +805,30 @@ def handle_get_object_geometry(data):
 
         object_id = data.get('object_id', '')
         if not object_id:
-            return {
+            result = {
                 "success": False,
                 "error": "No object_id provided"
             }
+            return filter_debug_response(result)
 
         # Convert string to GUID
         try:
             import System
             guid = System.Guid(object_id)
         except:
-            return {
+            result = {
                 "success": False,
                 "error": f"Invalid object_id format: {object_id}"
             }
+            return filter_debug_response(result)
 
         # Check if object exists
         if not rs.IsObject(guid):
-            return {
+            result = {
                 "success": False,
                 "error": f"Object with ID {object_id} not found"
             }
+            return filter_debug_response(result)
 
         obj_type = rs.ObjectType(guid)
         geometry_data = {
@@ -833,24 +899,27 @@ def handle_get_object_geometry(data):
                         for pt in bbox
                     ]
 
-        return {
+        result = {
             "success": True,
             "geometry": geometry_data,
             "message": f"Retrieved geometry data for {geometry_data['type_name']}"
         }
+        return filter_debug_response(result)
 
     except ImportError as e:
-        return {
+        result = {
             "success": False,
             "error": f"Rhino is not available: {str(e)}"
         }
+        return filter_debug_response(result)
     except Exception as e:
         import traceback
-        return {
+        result = {
             "success": False,
             "error": f"Error getting object geometry: {str(e)}",
             "traceback": traceback.format_exc()
         }
+        return filter_debug_response(result)
 
 # All tools are now automatically registered using the @rhino_tool decorator
 # Simply add @rhino_tool decorator to any new function and it will be available in MCP

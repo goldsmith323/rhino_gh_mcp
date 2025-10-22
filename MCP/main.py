@@ -2,7 +2,7 @@
 """
 Rhino/Grasshopper MCP Server
 
-A Model Context Protocol (MCP) server that provides tools for interacting with:
+A Model Context Protocol (MCP) server that provides tools for interacting with:/upg
 - Rhino 3D modeling environment
 - Grasshopper parametric design
 

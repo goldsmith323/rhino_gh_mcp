@@ -1,0 +1,188 @@
+{
+  "library_info": {
+    "name": "Stadium Roof Design Library",
+    "version": "1.0.0",
+    "description": "Parametric tools for stadium roof structural design and analysis",
+    "last_updated": "2025-01-20"
+  },
+  "workflows": [
+    {
+      "id": "complete_stadium_roof",
+      "name": "Complete Stadium Roof Workflow",
+      "description": "Full parametric workflow from base geometry generation through primary and secondary structural systems",
+      "difficulty": "intermediate",
+      "estimated_time": "5-10 minutes",
+      "steps": [
+        {
+          "order": 1,
+          "file": "Stadium Roof Geometry.gh",
+          "description": "Generate base stadium roof geometry with parametric form control",
+          "required_inputs": ["roof_span", "roof_height", "segments"],
+          "outputs": ["eml_roof_surface", "eml_boundary_curves"]
+        },
+        {
+          "order": 2,
+          "file": "Primary Truss Generator.gh",
+          "description": "Create primary structural truss system based on roof geometry",
+          "required_inputs": ["span_length", "truss_height", "bay_spacing"],
+          "outputs": ["eml_primary_truss_output_lines", "eml_primary_nodes"],
+          "depends_on": ["Stadium Roof Geometry.gh"]
+        },
+        {
+          "order": 3,
+          "file": "Secondary Truss Generator.gh",
+          "description": "Add secondary bracing and lateral support elements",
+          "required_inputs": ["brace_spacing", "connection_type"],
+          "outputs": ["eml_secondary_truss_output_lines", "eml_bracing_members"],
+          "depends_on": ["Primary Truss Generator.gh"]
+        }
+      ],
+      "final_outputs": [
+        "Complete structural wireframe",
+        "Primary and secondary truss members",
+        "Connection nodes for fabrication"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "filename": "Stadium Roof Geometry.gh",
+      "name": "Stadium Roof Geometry Generator",
+      "description": "Parametric generator for stadium roof base geometry. Creates complex curved or faceted roof forms with control over span, height, curvature, and segmentation.",
+      "category": "geometry",
+      "tags": ["stadium", "roof", "geometry", "parametric", "surface"],
+      "version": "1.0.0",
+      "inputs": [
+        {
+          "name": "roof_span",
+          "type": "number",
+          "description": "Overall span of the roof in meters",
+          "default": 100,
+          "min": 50,
+          "max": 300
+        },
+        {
+          "name": "roof_height",
+          "type": "number",
+          "description": "Height at the center of the roof in meters",
+          "default": 20,
+          "min": 10,
+          "max": 50
+        },
+        {
+          "name": "segments",
+          "type": "integer",
+          "description": "Number of segments for roof divisions",
+          "default": 16,
+          "min": 8,
+          "max": 32
+        }
+      ],
+      "outputs": [
+        {
+          "name": "eml_roof_surface",
+          "type": "surface",
+          "description": "Generated roof surface geometry"
+        },
+        {
+          "name": "eml_boundary_curves",
+          "type": "curves",
+          "description": "Boundary curves of the roof perimeter"
+        }
+      ],
+      "workflow_position": 1,
+      "workflow_id": "complete_stadium_roof"
+    },
+    {
+      "filename": "Primary Truss Generator.gh",
+      "name": "Primary Truss Generator",
+      "description": "Generates primary structural truss elements based on span, height, and spacing parameters. Supports multiple truss types and configurations.",
+      "category": "structural",
+      "tags": ["structural", "truss", "primary", "parametric", "steel"],
+      "version": "1.0.0",
+      "inputs": [
+        {
+          "name": "span_length",
+          "type": "number",
+          "description": "Length of individual truss span in meters",
+          "default": 25,
+          "min": 10,
+          "max": 50
+        },
+        {
+          "name": "truss_height",
+          "type": "number",
+          "description": "Vertical height/depth of truss in meters",
+          "default": 2.5,
+          "min": 1,
+          "max": 6
+        },
+        {
+          "name": "bay_spacing",
+          "type": "number",
+          "description": "Spacing between truss members in meters",
+          "default": 2.0,
+          "min": 1,
+          "max": 4
+        }
+      ],
+      "outputs": [
+        {
+          "name": "eml_primary_truss_output_lines",
+          "type": "curves",
+          "description": "Primary truss member lines ready for transfer"
+        },
+        {
+          "name": "eml_primary_nodes",
+          "type": "points",
+          "description": "Structural connection node points"
+        }
+      ],
+      "dependencies": ["Stadium Roof Geometry.gh"],
+      "workflow_position": 2,
+      "workflow_id": "complete_stadium_roof",
+      "notes": "Typically used after geometry generation. Requires base geometry reference."
+    },
+    {
+      "filename": "Secondary Truss Generator.gh",
+      "name": "Secondary Truss Generator",
+      "description": "Generates secondary bracing elements that connect to and stabilize primary trusses. Provides lateral support and distributes loads.",
+      "category": "structural",
+      "tags": ["structural", "truss", "secondary", "bracing", "lateral"],
+      "version": "1.0.0",
+      "inputs": [
+        {
+          "name": "brace_spacing",
+          "type": "number",
+          "description": "Spacing between secondary bracing members in meters",
+          "default": 3.0,
+          "min": 1.5,
+          "max": 6
+        },
+        {
+          "name": "connection_type",
+          "type": "text",
+          "description": "Type of connection (bolted, welded, hybrid)",
+          "default": "bolted",
+          "options": ["bolted", "welded", "hybrid"]
+        }
+      ],
+      "outputs": [
+        {
+          "name": "eml_secondary_truss_output_lines",
+          "type": "curves",
+          "description": "Secondary truss member lines"
+        },
+        {
+          "name": "eml_bracing_members",
+          "type": "curves",
+          "description": "Lateral bracing elements"
+        }
+      ],
+      "dependencies": ["Primary Truss Generator.gh"],
+      "workflow_position": 3,
+      "workflow_id": "complete_stadium_roof",
+      "notes": "Should be run after Primary Truss Generator. Requires primary truss geometry as input."
+    }
+  ]
+}
