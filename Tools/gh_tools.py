@@ -5556,6 +5556,7 @@ def handle_execute_eml_workflow(data):
         "- **parameter_names** (list): List of output parameter names to bake\n"
         "- **layer_name** (str): Target layer name (default: 'Default')\n"
         "- **create_sublayers** (bool): Create sub-layers by parameter name (default: True)\n"
+        "- **clear_existing** (bool): Clear existing geometry from target layer(s) before baking (default: False)\n"
         "- **user_confirmed** (bool): Must be True, set after getting user confirmation\n\n"
         "**Returns:**\n"
         "Dictionary with baked geometry details including object IDs, counts, and layer structure."
@@ -5566,6 +5567,7 @@ async def bake_grasshopper_geometry_to_rhino(
     parameter_names: list,
     layer_name: str = "Default",
     create_sublayers: bool = True,
+    clear_existing: bool = False,
     user_confirmed: bool = False
 ) -> Dict[str, Any]:
     """
@@ -5576,6 +5578,7 @@ async def bake_grasshopper_geometry_to_rhino(
         "parameter_names": parameter_names,
         "layer_name": layer_name,
         "create_sublayers": create_sublayers,
+        "clear_existing": clear_existing,
         "user_confirmed": user_confirmed
     })
 
@@ -5597,6 +5600,7 @@ def handle_bake_gh_geometry(data):
         parameter_names = data.get('parameter_names', [])
         layer_name = data.get('layer_name', 'Default')
         create_sublayers = data.get('create_sublayers', True)
+        clear_existing = data.get('clear_existing', False)
         user_confirmed = data.get('user_confirmed', False)
 
         # Safety check - require user confirmation
@@ -5629,13 +5633,40 @@ def handle_bake_gh_geometry(data):
                 "error": "No active Grasshopper document found"
             }
 
-        # Create or verify layer exists
-        if not rs.IsLayer(layer_name):
-            rs.AddLayer(layer_name)
+        # Create or verify layer exists using RhinoCommon
+        layer_exists = False
+        for i in range(sc.doc.Layers.Count):
+            if sc.doc.Layers[i].Name == layer_name:
+                layer_exists = True
+                break
 
+        if not layer_exists:
+            # Create new layer using RhinoCommon
+            new_layer = Rhino.DocObjects.Layer()
+            new_layer.Name = layer_name
+            layer_index_new = sc.doc.Layers.Add(new_layer)
+            if layer_index_new < 0:
+                return {
+                    "success": False,
+                    "error": f"Failed to create layer '{layer_name}'"
+                }
+            # Layer was successfully added
+            layer_exists = True
+
+        # Initialize variables
         baking_results = {}
         total_baked = 0
         debug_log = []
+        debug_log.append(f"Main layer '{layer_name}' verified/created successfully")
+
+        # Clear existing geometry if requested (for non-sublayer mode)
+        if clear_existing and not create_sublayers:
+            layer_objects = rs.ObjectsByLayer(layer_name)
+            if layer_objects:
+                deleted_count = rs.DeleteObjects(layer_objects)
+                debug_log.append(f"Cleared {deleted_count} existing objects from layer '{layer_name}'")
+            else:
+                debug_log.append(f"No existing objects to clear from layer '{layer_name}'")
 
         for param_name in parameter_names:
             debug_log.append(f"Processing parameter: {param_name}")
@@ -5659,14 +5690,72 @@ def handle_bake_gh_geometry(data):
             # Create sublayer if requested
             target_layer = layer_name
             if create_sublayers:
+                # Find parent layer index
+                parent_layer_index = -1
+                for i in range(sc.doc.Layers.Count):
+                    if sc.doc.Layers[i].Name == layer_name:
+                        parent_layer_index = i
+                        break
+
+                # Check if sublayer exists
                 sublayer_name = f"{layer_name}::{param_name}"
-                if not rs.IsLayer(sublayer_name):
-                    rs.AddLayer(sublayer_name, parent=layer_name)
+                sublayer_exists = False
+                for i in range(sc.doc.Layers.Count):
+                    if sc.doc.Layers[i].FullPath == sublayer_name:
+                        sublayer_exists = True
+                        break
+
+                # Create sublayer if it doesn't exist
+                if not sublayer_exists and parent_layer_index >= 0:
+                    new_sublayer = Rhino.DocObjects.Layer()
+                    new_sublayer.Name = param_name
+                    new_sublayer.ParentLayerId = sc.doc.Layers[parent_layer_index].Id
+                    sc.doc.Layers.Add(new_sublayer)
+
                 target_layer = sublayer_name
 
-            # Set current layer
+            # Clear existing geometry from target layer if requested
+            if clear_existing:
+                layer_objects = rs.ObjectsByLayer(target_layer)
+                if layer_objects:
+                    deleted_count = rs.DeleteObjects(layer_objects)
+                    debug_log.append(f"Cleared {deleted_count} existing objects from layer '{target_layer}'")
+
+            # Set current layer and get layer index using RhinoCommon
+            previous_layer = rs.CurrentLayer()
+
+            # Find the layer object directly using RhinoCommon
+            layer_index = -1
+            for i in range(sc.doc.Layers.Count):
+                layer = sc.doc.Layers[i]
+                if layer.FullPath == target_layer:
+                    layer_index = i
+                    break
+
+            # If not found by FullPath, try by Name
+            if layer_index == -1:
+                for i in range(sc.doc.Layers.Count):
+                    layer = sc.doc.Layers[i]
+                    if layer.Name == target_layer:
+                        layer_index = i
+                        break
+
+            debug_log.append(f"Previous layer: {previous_layer}")
+            debug_log.append(f"Target layer: {target_layer}")
+            debug_log.append(f"Found layer index: {layer_index}")
+
+            if layer_index == -1:
+                debug_log.append(f"ERROR: Could not find layer '{target_layer}' in document")
+                baking_results[param_name] = {
+                    "success": False,
+                    "error": f"Layer '{target_layer}' not found in document"
+                }
+                continue
+
+            # Set the current layer
             rs.CurrentLayer(target_layer)
-            debug_log.append(f"Baking to layer: {target_layer}")
+            current_layer_name = rs.CurrentLayer()
+            debug_log.append(f"Current layer after set: {current_layer_name}")
 
             # Bake geometry
             baked_ids = []
@@ -5688,7 +5777,12 @@ def handle_bake_gh_geometry(data):
                                 converted_geom, orig_type, conv_type, success, error_msg = convert_geometry_to_base(actual_geom)
 
                                 if success and converted_geom:
-                                    obj_id = sc.doc.Objects.Add(converted_geom)
+                                    # Create object attributes with specific layer
+                                    attrs = Rhino.DocObjects.ObjectAttributes()
+                                    attrs.LayerIndex = layer_index
+
+                                    # Add geometry with attributes to specify layer
+                                    obj_id = sc.doc.Objects.Add(converted_geom, attrs)
                                     if obj_id != System.Guid.Empty:
                                         baked_ids.append(str(obj_id))
                                         debug_log.append(f"Baked {orig_type} -> {conv_type}: {obj_id}")
