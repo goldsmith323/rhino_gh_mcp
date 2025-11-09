@@ -13,7 +13,7 @@ This directory contains everything needed to run the HTTP bridge server inside R
 Make sure you have Rhino 8 with Python 3.9 support installed.
 
 ### 2. Start the Bridge Server
-1. **Open Script Editor** in Rhino: Tools > PythonScript > Edit
+1. **Open Script Editor** in Rhino: Tools > Script > Edit
 2. **Load and run the startup script:**
    ```python
    exec(open('C:\\path\\to\\rhino_gh_mcp\\Rhino\\start_rhino_bridge.py').read())
@@ -45,7 +45,7 @@ You should see a JSON response like:
 The bridge server provides these HTTP endpoints:
 
 - **GET `/status`** - Check server status
-- **GET `/info`** - Get server information  
+- **GET `/info`** - Get server information
 - **POST `/draw_line`** - Draw a line in Rhino
 - **POST `/list_sliders`** - List Grasshopper sliders
 - **POST `/set_slider`** - Set Grasshopper slider value

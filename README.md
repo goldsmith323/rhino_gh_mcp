@@ -58,7 +58,7 @@ pip install -r requirements.txt
 
 ### 2. Start Rhino Bridge Server
 1. Open Rhino 8
-2. Open Python Script Editor: `Tools > PythonScript > Edit`
+2. Open Python Script Editor: `Tools > Script > Edit`
 3. Load and run:
    ```python
    exec(open(r'C:\path\to\rhino_gh_mcp\Rhino\start_rhino_bridge.py').read())
