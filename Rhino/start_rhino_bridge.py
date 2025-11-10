@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+#! python 3
+# venv: rhino-gh-mcp-bridge
+# r: requests
 """
 Rhino Bridge Startup Script
 
@@ -11,6 +14,9 @@ Usage:
 2. Open Script Editor (Tools > Script > Edit)
 3. Load and run this script
 4. The bridge server will start and run in background
+
+Note: The script uses a dedicated virtual environment (rhino-gh-mcp-bridge)
+to keep dependencies isolated from other Rhino scripts.
 """
 
 import sys

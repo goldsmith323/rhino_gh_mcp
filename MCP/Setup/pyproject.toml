@@ -1,0 +1,11 @@
+[project]
+name = "rhino-gh-mcp"
+version = "1.0.0"
+description = "MCP Server for Rhino 3D and Grasshopper integration"
+requires-python = ">=3.10"
+dependencies = [
+    "mcp>=1.0.0",
+    "pydantic>=2.0.0",
+    "typing-extensions>=4.0.0",
+    "requests>=2.25.0",
+]

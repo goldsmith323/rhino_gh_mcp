@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+#! python 3
+# venv: rhino-gh-mcp-bridge
+# r: requests
 """
 Rhino HTTP Bridge Server
 
@@ -8,6 +11,9 @@ Rhino/Grasshopper operations, returning results via HTTP responses.
 
 This server provides a dynamic HTTP API that automatically discovers and registers
 endpoints from tool modules (rhino_tools.py, gh_tools.py).
+
+Note: The script uses a dedicated virtual environment (rhino-gh-mcp-bridge)
+to keep dependencies isolated from other Rhino scripts.
 """
 
 import json
