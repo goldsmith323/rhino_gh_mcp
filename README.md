@@ -66,7 +66,7 @@ pip install -r requirements.txt
 4. Verify: Visit `http://localhost:8080/status`
 
 ### 3. Configure MCP Client
-Add to your MCP client configuration file:
+Add to your MCP client configuration file (optional: if running in a virtual environment, you can point you command to that python executable):
 
 ```json
 {
