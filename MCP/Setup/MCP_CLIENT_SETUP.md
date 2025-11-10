@@ -9,12 +9,12 @@
 
    **Windows Example:**
    ```json
-   "C:\\Users\\SeyedZ\\Documents\\GitHub\\rhino_gh_mcp\\main.py"
+   "C:\\Path\\To\\rhino_gh_mcp\\MCP\\main.py"
    ```
-   
+
    **macOS/Linux Example:**
    ```json
-   "/Users/username/Documents/rhino_gh_mcp/main.py"
+   "/path/to/rhino_gh_mcp/MCP/main.py"
    ```
 
 3. **Configuration file locations:**
@@ -29,7 +29,7 @@
     "Rhino Grasshopper MCP": {
       "command": "python",
       "args": [
-        "C:\\Users\\SeyedZ\\Documents\\GitHub\\rhino_gh_mcp\\main.py"
+        "C:\\Path\\To\\rhino_gh_mcp\\MCP\\main.py"
       ],
       "description": "Rhino 3D and Grasshopper parametric design tools"
     }
