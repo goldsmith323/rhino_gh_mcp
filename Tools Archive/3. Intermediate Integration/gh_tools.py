@@ -147,18 +147,6 @@ def ensure_file_is_active(file_name: str) -> Dict[str, Any]:
 # FILE MANAGEMENT TOOLS
 # ============================================================================
 
-@gh_tool(
-    name="list_gh_files",
-    description=(
-        "List all Grasshopper (.gh) files available in the Grasshopper File Library with their metadata. "
-        "This tool scans the 'Tools/Grasshopper File Library' directory and returns "
-        "all .gh files with detailed information from metadata.json including descriptions, "
-        "inputs, outputs, categories, and workflow relationships.\n\n"
-        "**Returns:**\n"
-        "Dictionary containing list of available .gh files with their paths, metadata, "
-        "and available workflows. Use this to understand what files are available and how they work together."
-    )
-)
 async def list_gh_files() -> Dict[str, Any]:
     """
     List all .gh files in the Grasshopper File Library with metadata.
@@ -168,7 +156,6 @@ async def list_gh_files() -> Dict[str, Any]:
     """
     return call_bridge_api("/list_gh_files", {})
 
-@bridge_handler("/list_gh_files")
 def handle_list_gh_files(data):
     """Bridge handler for listing .gh files in the library with metadata"""
     try:
@@ -258,20 +245,6 @@ def handle_list_gh_files(data):
             "files": []
         }
 
-@gh_tool(
-    name="open_gh_file",
-    description=(
-        "Open one or more Grasshopper files from the File Library. "
-        "Files can be opened individually or multiple files can be opened at once. "
-        "Once opened, you can interact with components in each file by specifying "
-        "the file_name parameter in other tools.\n\n"
-        "**Parameters:**\n"
-        "- **file_name** (str): Name of the .gh file to open (can be just filename or relative path)\n"
-        "- **open_multiple** (bool, optional): If True, keeps existing files open. Default False (closes others)\n"
-        "\n**Returns:**\n"
-        "Dictionary containing the operation status and opened file information."
-    )
-)
 async def open_gh_file(file_name: str, open_multiple: bool = False) -> Dict[str, Any]:
     """
     Open a Grasshopper file from the library.
@@ -290,7 +263,6 @@ async def open_gh_file(file_name: str, open_multiple: bool = False) -> Dict[str,
 
     return call_bridge_api("/open_gh_file", request_data)
 
-@bridge_handler("/open_gh_file")
 def handle_open_gh_file(data):
     """Bridge handler for opening .gh files"""
     try:
@@ -706,17 +678,6 @@ def handle_set_active_gh_file(data):
         }
 
 
-@gh_tool(
-    name="open_all_gh_files",
-    description=(
-        "Open all Grasshopper files from the library at once. This will launch Grasshopper if "
-        "not already running, then open all .gh files found in the Grasshopper File Library.\n\n"
-        "**Parameters:**\n"
-        "- **file_names** (list, optional): Specific files to open. If not provided, opens all files in library.\n"
-        "\n**Returns:**\n"
-        "Dictionary containing results for each file opened."
-    )
-)
 async def open_all_gh_files(file_names=None) -> Dict[str, Any]:
     """
     Open all (or specified) Grasshopper files.
@@ -733,7 +694,6 @@ async def open_all_gh_files(file_names=None) -> Dict[str, Any]:
 
     return call_bridge_api("/open_all_gh_files", request_data)
 
-@bridge_handler("/open_all_gh_files")
 def handle_open_all_gh_files(data):
     """Bridge handler for opening multiple .gh files"""
     try:
@@ -912,18 +872,6 @@ def handle_open_all_gh_files(data):
         }
         return filter_debug_response(result)
 
-@gh_tool(
-    name="close_gh_file",
-    description=(
-        "Close a specific Grasshopper file by name. "
-        "If the file has unsaved changes, you can specify whether to save or discard them.\n\n"
-        "**Parameters:**\n"
-        "- **file_name** (str): Name of the .gh file to close\n"
-        "- **save_changes** (bool, optional): If True, saves changes before closing. Default False\n"
-        "\n**Returns:**\n"
-        "Dictionary containing the operation status."
-    )
-)
 async def close_gh_file(file_name: str, save_changes: bool = False) -> Dict[str, Any]:
     """
     Close a Grasshopper file.
@@ -942,7 +890,6 @@ async def close_gh_file(file_name: str, save_changes: bool = False) -> Dict[str,
 
     return call_bridge_api("/close_gh_file", request_data)
 
-@bridge_handler("/close_gh_file")
 def handle_close_gh_file(data):
     """Bridge handler for closing .gh files"""
     try:
@@ -1019,27 +966,6 @@ def handle_close_gh_file(data):
 # EML PARAMETER DISCOVERY AND MANAGEMENT
 # ============================================================================
 
-@gh_tool(
-    name="list_eml_parameters",
-    description=(
-        "Discover all EML (eml_) prefixed parameters in the active Grasshopper file. "
-        "The eml_ naming convention is used to mark components for automated interaction "
-        "and cross-file data exchange. This tool finds all components with names starting "
-        "with 'eml_' including:\n\n"
-        "- **Sliders**: Number sliders for numeric input\n"
-        "- **Panels**: Text panels for output or input\n"
-        "- **Boolean Toggles**: True/False switches\n"
-        "- **Value Lists**: Dropdown selection components\n"
-        "- **Number Primitives**: Number containers\n"
-        "- **Text Primitives**: Text containers\n"
-        "- **Integer Primitives**: Integer containers\n"
-        "- **Geometry Parameters**: Curve, Brep, Line, Surface, Point, etc.\n\n"
-        "Each parameter includes metadata about its type, current value, direction (input/output), "
-        "and connection status to help with cross-file data exchange.\n\n"
-        "**Returns:**\n"
-        "Dictionary containing categorized lists of all eml_ parameters."
-    )
-)
 async def list_eml_parameters() -> Dict[str, Any]:
     """
     List all eml_ prefixed parameters in the Grasshopper document.
@@ -1049,7 +975,6 @@ async def list_eml_parameters() -> Dict[str, Any]:
     """
     return call_bridge_api("/list_eml_parameters", {})
 
-@bridge_handler("/list_eml_parameters")
 def handle_list_eml_parameters(data):
     """Bridge handler for discovering all eml_ prefixed parameters"""
     try:
@@ -1269,19 +1194,6 @@ def handle_list_eml_parameters(data):
             "traceback": traceback.format_exc()
         }
 
-@gh_tool(
-    name="get_eml_parameter_value",
-    description=(
-        "Get the current value(s) from any eml_ prefixed parameter. "
-        "Works with all parameter types including sliders, panels, toggles, primitives, "
-        "and geometry parameters. For geometry parameters, returns metadata about the "
-        "geometry rather than the actual geometry data.\n\n"
-        "**Parameters:**\n"
-        "- **parameter_name** (str): The name of the eml_ parameter (e.g., 'eml_panel_count')\n"
-        "\n**Returns:**\n"
-        "Dictionary containing the parameter value(s) and metadata."
-    )
-)
 async def get_eml_parameter_value(parameter_name: str) -> Dict[str, Any]:
     """
     Get value from an eml_ parameter.
@@ -1298,7 +1210,6 @@ async def get_eml_parameter_value(parameter_name: str) -> Dict[str, Any]:
 
     return call_bridge_api("/get_eml_parameter_value", request_data)
 
-@bridge_handler("/get_eml_parameter_value")
 def handle_get_eml_parameter_value(data):
     """Bridge handler for getting eml_ parameter values"""
     try:
@@ -1414,25 +1325,6 @@ def handle_get_eml_parameter_value(data):
             "traceback": traceback.format_exc()
         }
 
-@gh_tool(
-    name="set_eml_parameter_value",
-    description=(
-        "Set the value of any eml_ prefixed parameter. "
-        "Supports sliders, panels, boolean toggles, value lists, and primitive parameters. "
-        "For geometry parameters, use the existing set_grasshopper_geometry_input tool.\n\n"
-        "**Parameters:**\n"
-        "- **parameter_name** (str): The name of the eml_ parameter\n"
-        "- **value** (any): The value to set (type depends on parameter type)\n"
-        "  - Slider: float/int\n"
-        "  - Panel: string\n"
-        "  - Boolean: true/false\n"
-        "  - Value List: string (item name)\n"
-        "  - Number/Integer: float/int\n"
-        "  - Text: string\n"
-        "\n**Returns:**\n"
-        "Dictionary containing the operation status."
-    )
-)
 async def set_eml_parameter_value(parameter_name: str, value: Any) -> Dict[str, Any]:
     """
     Set value for an eml_ parameter.
@@ -1451,7 +1343,6 @@ async def set_eml_parameter_value(parameter_name: str, value: Any) -> Dict[str, 
 
     return call_bridge_api("/set_eml_parameter_value", request_data)
 
-@bridge_handler("/set_eml_parameter_value")
 def handle_set_eml_parameter_value(data):
     """Bridge handler for setting eml_ parameter values"""
     try:
@@ -1560,22 +1451,6 @@ def handle_set_eml_parameter_value(data):
             "traceback": traceback.format_exc()
         }
 
-@gh_tool(
-    name="suggest_eml_connections",
-    description=(
-        "Analyze eml_ parameters in the current Grasshopper file and suggest potential "
-        "data connections between them. This tool identifies output parameters that could "
-        "feed into input parameters based on type compatibility and naming patterns. "
-        "Particularly useful for understanding data flow and setting up cross-file data exchange.\n\n"
-        "The tool categorizes parameters by direction:\n"
-        "- **Outputs**: Parameters with data that could be extracted\n"
-        "- **Inputs**: Parameters waiting for data input\n"
-        "- **Isolated**: Parameters with no connections\n\n"
-        "It then suggests compatible connections based on data types.\n\n"
-        "**Returns:**\n"
-        "Dictionary containing parameter categorization and suggested connections."
-    )
-)
 async def suggest_eml_connections() -> Dict[str, Any]:
     """
     Analyze and suggest connections between eml_ parameters.
@@ -1585,7 +1460,6 @@ async def suggest_eml_connections() -> Dict[str, Any]:
     """
     return call_bridge_api("/suggest_eml_connections", {})
 
-@bridge_handler("/suggest_eml_connections")
 def handle_suggest_eml_connections(data):
     """Bridge handler for suggesting eml_ parameter connections"""
     try:
@@ -4799,26 +4673,6 @@ def validate_geometry_compatibility(source_types, target_param_obj, debug_log=No
     return (len([w for w in warnings if w.startswith("WARNING")]) == 0, warnings)
 
 
-@gh_tool(
-    name="transfer_eml_geometry_between_files",
-    description=(
-        "Transfer geometry data directly between two Grasshopper files without baking to Rhino. "
-        "This tool extracts geometry from an eml_ output parameter in one file and injects it "
-        "into an eml_ input parameter in another file. Works with ANY eml_ prefixed geometry parameters.\n\n"
-        "**Use Cases:**\n"
-        "- Transfer curves from a generator file to a processor file\n"
-        "- Pass surfaces between optimization stages\n"
-        "- Chain multiple .gh files in a pipeline\n\n"
-        "**Parameters:**\n"
-        "- **source_file** (str): Source .gh filename (e.g., 'curve_generator.gh')\n"
-        "- **source_parameter** (str): Output parameter name (e.g., 'eml_output_curves')\n"
-        "- **target_file** (str): Target .gh filename (e.g., 'surface_builder.gh')\n"
-        "- **target_parameter** (str): Input parameter name (e.g., 'eml_input_curves')\n"
-        "- **auto_open_files** (bool): Automatically open files if not already open (default: true)\n"
-        "\n**Returns:**\n"
-        "Dictionary containing transfer status and geometry information."
-    )
-)
 async def transfer_eml_geometry_between_files(
     source_file: str,
     source_parameter: str,
@@ -4849,402 +4703,6 @@ async def transfer_eml_geometry_between_files(
 
     return call_bridge_api("/transfer_eml_geometry", request_data)
 
-@bridge_handler("/transfer_eml_geometry")
-def handle_transfer_eml_geometry(data):
-    """Bridge handler for transferring geometry between files"""
-    try:
-        import clr
-        clr.AddReference('Grasshopper')
-        clr.AddReference('RhinoCommon')
-        import Grasshopper
-        import Rhino
-        import System
-        import scriptcontext as sc
-        import os
-
-        source_file = data.get('source_file', '')
-        source_parameter = data.get('source_parameter', '')
-        target_file = data.get('target_file', '')
-        target_parameter = data.get('target_parameter', '')
-        auto_open_files = data.get('auto_open_files', True)
-
-        # Ensure Grasshopper is loaded
-        gh = Rhino.RhinoApp.GetPlugInObject("Grasshopper")
-        if not gh:
-            if auto_open_files:
-                Rhino.RhinoApp.RunScript("_Grasshopper", False)
-                import time
-                time.sleep(2)
-                gh = Rhino.RhinoApp.GetPlugInObject("Grasshopper")
-            if not gh:
-                return {
-                    "success": False,
-                    "error": "Grasshopper plugin not available"
-                }
-
-        # Helper function to find and open file
-        def open_gh_file_if_needed(file_name):
-            script_dir = os.path.dirname(os.path.abspath(__file__))
-            library_path = os.path.join(script_dir, "Grasshopper File Library")
-
-            # Find the file
-            target_file = None
-            for root, dirs, files in os.walk(library_path):
-                for file in files:
-                    if file.lower() == file_name.lower():
-                        target_file = os.path.join(root, file)
-                        break
-                if target_file:
-                    break
-
-            if not target_file:
-                return None
-
-            # Check if already open
-            doc_server = Grasshopper.Instances.DocumentServer
-            if doc_server:
-                for doc in doc_server:
-                    if doc and hasattr(doc, 'FilePath') and doc.FilePath:
-                        if os.path.normpath(doc.FilePath).lower() == os.path.normpath(target_file).lower():
-                            return doc  # Already open
-
-            # Open the file if auto_open is enabled
-            if auto_open_files:
-                command = f'_GrasshopperOpen "{target_file}"'
-                Rhino.RhinoApp.RunScript(command, False)
-                import time
-                time.sleep(1)  # Give it time to load
-
-                # Try to get the newly opened document
-                doc_server = Grasshopper.Instances.DocumentServer
-                if doc_server:
-                    for doc in doc_server:
-                        if doc and hasattr(doc, 'FilePath') and doc.FilePath:
-                            if os.path.normpath(doc.FilePath).lower() == os.path.normpath(target_file).lower():
-                                return doc
-
-            return None
-
-        # Debug info
-        debug_info = []
-        debug_info.append(f"Attempting to transfer from {source_file}:{source_parameter} to {target_file}:{target_parameter}")
-
-        # Step 1: Open source file and extract geometry
-        source_doc = open_gh_file_if_needed(source_file)
-        if not source_doc:
-            return {
-                "success": False,
-                "error": f"Could not open or find source file: {source_file}",
-                "debug_info": debug_info
-            }
-
-        debug_info.append(f"Source file opened: {source_file}")
-        source_path = str(source_doc.FilePath) if source_doc.FilePath else None
-
-        # PROPERLY activate source doc using OpenDocument (this switches the visible tab)
-        if source_path:
-            try:
-                import time
-                debug_info.append(f"Calling gh.OpenDocument for source: {source_path}")
-                gh.OpenDocument(source_path)
-                time.sleep(0.5)  # Give UI time to switch
-
-                # Verify activation worked
-                if Grasshopper.Instances.ActiveCanvas and Grasshopper.Instances.ActiveCanvas.Document:
-                    active_doc = Grasshopper.Instances.ActiveCanvas.Document
-                    active_name = os.path.basename(str(active_doc.FilePath)) if active_doc.FilePath else "Unknown"
-                    debug_info.append(f"Active document after OpenDocument: {active_name}")
-
-                    if active_doc == source_doc:
-                        debug_info.append(f"✓ Successfully activated source file: {source_file}")
-                    else:
-                        debug_info.append(f"WARNING: Expected {source_file} to be active, but {active_name} is active")
-                else:
-                    debug_info.append(f"WARNING: No active canvas after OpenDocument")
-            except Exception as e:
-                debug_info.append(f"ERROR activating source file: {str(e)}")
-                import traceback
-                debug_info.append(f"Traceback: {traceback.format_exc()[:300]}")
-
-        # Find source parameter and extract geometry
-        source_obj = None
-        for obj in source_doc.Objects:
-            if hasattr(obj, 'NickName') and obj.NickName:
-                if obj.NickName.lower() == source_parameter.lower():
-                    source_obj = obj
-                    debug_info.append(f"Found source parameter: {source_parameter}")
-                    break
-
-        if not source_obj:
-            return {
-                "success": False,
-                "error": f"Source parameter '{source_parameter}' not found in {source_file}",
-                "debug_info": debug_info
-            }
-
-        # Extract geometry data
-        if not hasattr(source_obj, 'VolatileData'):
-            return {
-                "success": False,
-                "error": f"Source parameter '{source_parameter}' has no data",
-                "debug_info": debug_info
-            }
-
-        # Store geometry temporarily in Rhino document (as referenced objects)
-        rhino_object_ids = []
-        geometry_types_found = []
-        try:
-            volatile_data = source_obj.VolatileData
-            debug_info.append(f"VolatileData PathCount: {volatile_data.PathCount}")
-
-            for i in range(volatile_data.PathCount):
-                path = volatile_data.get_Path(i)
-                branch = volatile_data.get_Branch(path)
-                debug_info.append(f"Branch {i} has {len(branch)} items")
-
-                for item in branch:
-                    if hasattr(item, 'Value'):
-                        geom = item.Value
-                        if geom:
-                            original_type = type(geom).__name__
-                            geometry_types_found.append(original_type)
-
-                            # Use smart conversion helper
-                            converted_geom, orig_type, conv_type, success, error_msg = convert_geometry_to_base(geom, debug_info)
-
-                            if not success:
-                                debug_info.append(f"Skipping {orig_type}: {error_msg}")
-                                continue
-
-                            if converted_geom is None:
-                                debug_info.append(f"WARNING: Conversion returned None for {orig_type}")
-                                continue
-
-                            # Add to Rhino document temporarily
-                            obj_id = sc.doc.Objects.Add(converted_geom)
-                            if obj_id != System.Guid.Empty:
-                                rhino_object_ids.append(str(obj_id))
-                                if orig_type != conv_type:
-                                    debug_info.append(f"Added geometry to Rhino: {orig_type} (converted to {conv_type}) -> {obj_id}")
-                                else:
-                                    debug_info.append(f"Added geometry to Rhino: {orig_type} -> {obj_id}")
-                            else:
-                                debug_info.append(f"WARNING: Failed to add {orig_type} (as {conv_type}) to Rhino document")
-        except Exception as e:
-            import traceback
-            return {
-                "success": False,
-                "error": f"Error extracting geometry: {str(e)}",
-                "traceback": traceback.format_exc(),
-                "debug_info": debug_info
-            }
-
-        if not rhino_object_ids:
-            return {
-                "success": False,
-                "error": f"No geometry found in source parameter '{source_parameter}'",
-                "debug_info": debug_info,
-                "geometry_types_found": list(set(geometry_types_found))
-            }
-
-        debug_info.append(f"Extracted {len(rhino_object_ids)} geometry objects from source")
-        debug_info.append(f"Geometry types found: {', '.join(set(geometry_types_found))}")
-
-        # Step 2: Open target file
-        target_doc = open_gh_file_if_needed(target_file)
-        if not target_doc:
-            # Clean up temporary Rhino objects
-            for obj_id in rhino_object_ids:
-                sc.doc.Objects.Delete(System.Guid(obj_id), True)
-            return {
-                "success": False,
-                "error": f"Could not open or find target file: {target_file}",
-                "debug_info": debug_info
-            }
-
-        debug_info.append(f"Target file opened: {target_file}")
-        target_path = str(target_doc.FilePath) if target_doc.FilePath else None
-
-        # PROPERLY activate target doc using OpenDocument (this switches the visible tab)
-        if target_path:
-            try:
-                import time
-                debug_info.append(f"Calling gh.OpenDocument for target: {target_path}")
-                gh.OpenDocument(target_path)
-                time.sleep(0.5)  # Give UI time to switch
-
-                # Verify activation worked
-                if Grasshopper.Instances.ActiveCanvas and Grasshopper.Instances.ActiveCanvas.Document:
-                    active_doc = Grasshopper.Instances.ActiveCanvas.Document
-                    active_name = os.path.basename(str(active_doc.FilePath)) if active_doc.FilePath else "Unknown"
-                    debug_info.append(f"Active document after OpenDocument: {active_name}")
-
-                    if active_doc == target_doc:
-                        debug_info.append(f"✓ Successfully activated target file: {target_file}")
-                    else:
-                        debug_info.append(f"WARNING: Expected {target_file} to be active, but {active_name} is active")
-                else:
-                    debug_info.append(f"WARNING: No active canvas after OpenDocument")
-            except Exception as e:
-                debug_info.append(f"ERROR activating target file: {str(e)}")
-                import traceback
-                debug_info.append(f"Traceback: {traceback.format_exc()[:300]}")
-
-        # Find target parameter
-        target_obj = None
-        for obj in target_doc.Objects:
-            if hasattr(obj, 'NickName') and obj.NickName:
-                if obj.NickName.lower() == target_parameter.lower():
-                    target_obj = obj
-                    debug_info.append(f"Found target parameter: {target_parameter}")
-                    break
-
-        if not target_obj:
-            # Clean up temporary Rhino objects
-            for obj_id in rhino_object_ids:
-                sc.doc.Objects.Delete(System.Guid(obj_id), True)
-            return {
-                "success": False,
-                "error": f"Target parameter '{target_parameter}' not found in {target_file}",
-                "debug_info": debug_info
-            }
-
-        # Validate geometry compatibility with target
-        is_compatible, compatibility_warnings = validate_geometry_compatibility(
-            list(set(geometry_types_found)),
-            target_obj,
-            debug_info
-        )
-
-        if compatibility_warnings:
-            for warning in compatibility_warnings:
-                debug_info.append(warning)
-
-        # Step 3: Inject geometry into target parameter
-        try:
-            debug_info.append(f"Clearing existing data from target parameter to replace (not append)")
-
-            # Thorough clearing to ensure replacement not appending
-            if hasattr(target_obj, 'ClearData'):
-                target_obj.ClearData()
-
-            # Also clear persistent data explicitly
-            if hasattr(target_obj, 'PersistentData') and target_obj.PersistentData is not None:
-                target_obj.PersistentData.Clear()
-
-            # Clear volatile data if present
-            if hasattr(target_obj, 'VolatileData') and target_obj.VolatileData is not None:
-                target_obj.VolatileData.Clear()
-
-            debug_info.append(f"Data cleared successfully, adding new geometry")
-
-            # Add new references
-            transferred_count = 0
-            for obj_id_str in rhino_object_ids:
-                obj_id = System.Guid(obj_id_str)
-                rhino_obj = sc.doc.Objects.Find(obj_id)
-                if rhino_obj:
-                    geom = rhino_obj.Geometry
-                    if geom:
-                        # Add geometry as persistent data
-                        target_obj.AddPersistentData(geom.Duplicate())
-                        transferred_count += 1
-                        debug_info.append(f"Transferred geometry {transferred_count}/{len(rhino_object_ids)}: {type(geom).__name__}")
-
-            debug_info.append(f"Expiring solution to trigger recompute")
-            # Expire solution to trigger recompute
-            target_obj.ExpireSolution(True)
-
-            debug_info.append(f"Cleaning up temporary Rhino objects")
-            # Clean up temporary Rhino objects
-            for obj_id in rhino_object_ids:
-                sc.doc.Objects.Delete(System.Guid(obj_id), True)
-
-            debug_info.append(f"Transfer complete! {transferred_count} objects transferred")
-
-            result = {
-                "success": True,
-                "message": f"Successfully transferred {transferred_count} geometry object(s) from {source_file} to {target_file}",
-                "source_file": source_file,
-                "source_parameter": source_parameter,
-                "target_file": target_file,
-                "target_parameter": target_parameter,
-                "geometry_count": transferred_count,
-                "geometry_types": list(set(geometry_types_found)),
-                "debug_info": debug_info
-            }
-
-            # Add compatibility warnings if any
-            if compatibility_warnings:
-                result["compatibility_warnings"] = compatibility_warnings
-                result["is_compatible"] = is_compatible
-
-            return result
-
-        except Exception as e:
-            import traceback
-            debug_info.append(f"ERROR during injection: {str(e)}")
-            debug_info.append(f"Traceback: {traceback.format_exc()[:500]}")
-
-            # Clean up temporary Rhino objects
-            for obj_id in rhino_object_ids:
-                try:
-                    sc.doc.Objects.Delete(System.Guid(obj_id), True)
-                except:
-                    pass
-            return {
-                "success": False,
-                "error": f"Error injecting geometry: {str(e)}",
-                "traceback": traceback.format_exc(),
-                "debug_info": debug_info
-            }
-
-    except Exception as e:
-        import traceback
-        return {
-            "success": False,
-            "error": f"Error in geometry transfer: {str(e)}",
-            "traceback": traceback.format_exc(),
-            "debug_info": debug_info if 'debug_info' in locals() else []
-        }
-
-@gh_tool(
-    name="execute_eml_workflow",
-    description=(
-        "Execute an automated multi-file Grasshopper workflow. This tool chains multiple .gh files "
-        "together, automatically transferring data between eml_ parameters. Works with ANY .gh files "
-        "that follow the eml_ naming convention.\n\n"
-        "**Use Cases:**\n"
-        "- Automated design pipelines (generator → processor → exporter)\n"
-        "- Multi-stage optimization workflows\n"
-        "- Complex parametric workflows without manual intervention\n\n"
-        "**Parameters:**\n"
-        "- **workflow_steps** (list): List of workflow steps, each containing:\n"
-        "  - **file** (str): .gh filename\n"
-        "  - **inputs** (dict, optional): Input parameter values {param_name: value}\n"
-        "    - Values can be numbers, strings, or Rhino object IDs\n"
-        "    - Use '{{step_N.param_name}}' to reference outputs from previous steps\n"
-        "  - **extract_outputs** (list, optional): List of output parameter names to extract\n"
-        "- **auto_discover** (bool): Auto-discover and suggest connections (default: false)\n"
-        "\n**Example:**\n"
-        "```json\n"
-        "[\n"
-        "  {\n"
-        "    \"file\": \"curve_generator.gh\",\n"
-        "    \"inputs\": {\"eml_num_points\": 20},\n"
-        "    \"extract_outputs\": [\"eml_output_curve\"]\n"
-        "  },\n"
-        "  {\n"
-        "    \"file\": \"surface_builder.gh\",\n"
-        "    \"inputs\": {\"eml_input_curve\": \"{{step_0.eml_output_curve}}\"},\n"
-        "    \"extract_outputs\": [\"eml_output_surface\"]\n"
-        "  }\n"
-        "]\n"
-        "```\n"
-        "\n**Returns:**\n"
-        "Dictionary containing workflow execution results and extracted outputs from each step."
-    )
-)
 async def execute_eml_workflow(
     workflow_steps,
     auto_discover: bool = False
@@ -5266,7 +4724,6 @@ async def execute_eml_workflow(
 
     return call_bridge_api("/execute_eml_workflow", request_data)
 
-@bridge_handler("/execute_eml_workflow")
 def handle_execute_eml_workflow(data):
     """Bridge handler for executing EML workflows"""
     try:
@@ -5834,32 +5291,6 @@ def handle_bake_gh_geometry(data):
 # CUSTOM SCRIPT EXECUTION TOOL
 # ============================================================================
 
-@gh_tool(
-    name="execute_custom_python_script",
-    description=(
-        "Execute custom Python script in Rhino/Grasshopper environment with comprehensive debugging. "
-        "Use this tool when you need to run custom Python code that leverages RhinoCommon and "
-        "Grasshopper APIs directly.\n\n"
-        "**Use Cases:**\n"
-        "- Complex geometry operations not covered by existing tools\n"
-        "- Custom batch processing of Grasshopper data\n"
-        "- Advanced Rhino document manipulation\n"
-        "- Custom analysis or calculations\n\n"
-        "**Parameters:**\n"
-        "- **script_code** (str): Python code to execute (supports RhinoCommon, Grasshopper APIs)\n"
-        "- **script_description** (str): Brief description of what the script does\n"
-        "- **return_variable** (str, optional): Name of variable to return from script scope\n\n"
-        "**Available in Script Scope:**\n"
-        "- `Rhino` - RhinoCommon library\n"
-        "- `Grasshopper` - Grasshopper API\n"
-        "- `rs` - rhinoscriptsyntax\n"
-        "- `sc` - scriptcontext (access to Rhino document)\n"
-        "- `ghenv` - Grasshopper environment\n"
-        "- `math`, `System` - Standard libraries\n\n"
-        "**Returns:**\n"
-        "Dictionary with execution results, output, errors, and debug information."
-    )
-)
 async def execute_custom_python_script(
     script_code: str,
     script_description: str,
@@ -5875,163 +5306,6 @@ async def execute_custom_python_script(
     })
 
 
-@bridge_handler("/execute_custom_script")
-def handle_execute_custom_script(data):
-    """Bridge handler for custom script execution"""
-    try:
-        import clr
-        clr.AddReference('Grasshopper')
-        clr.AddReference('RhinoCommon')
-        import Grasshopper
-        import Rhino
-        import rhinoscriptsyntax as rs
-        import scriptcontext as sc
-        import System
-        import math
-        import io
-        import sys
-
-        script_code = data.get('script_code', '')
-        script_description = data.get('script_description', 'Custom script')
-        return_variable = data.get('return_variable', None)
-
-        if not script_code:
-            return {
-                "success": False,
-                "error": "No script_code provided"
-            }
-
-        debug_log = []
-        debug_log.append(f"Executing: {script_description}")
-        debug_log.append(f"Script length: {len(script_code)} characters")
-        debug_log.append(f"Script lines: {len(script_code.splitlines())}")
-
-        # Capture stdout/stderr
-        old_stdout = sys.stdout
-        old_stderr = sys.stderr
-        captured_output = io.StringIO()
-        captured_errors = io.StringIO()
-
-        try:
-            sys.stdout = captured_output
-            sys.stderr = captured_errors
-
-            # Prepare execution environment
-            exec_globals = {
-                'Rhino': Rhino,
-                'Grasshopper': Grasshopper,
-                'rs': rs,
-                'sc': sc,
-                'System': System,
-                'math': math,
-                '__builtins__': __builtins__
-            }
-
-            exec_locals = {}
-
-            # Execute script
-            debug_log.append("Starting script execution...")
-            exec(script_code, exec_globals, exec_locals)
-            debug_log.append("Script execution completed successfully")
-
-            # Restore stdout/stderr
-            sys.stdout = old_stdout
-            sys.stderr = old_stderr
-
-            # Get output
-            output_text = captured_output.getvalue()
-            error_text = captured_errors.getvalue()
-
-            # Get return value if specified
-            return_value = None
-            return_value_type = None
-            if return_variable and return_variable in exec_locals:
-                return_value = exec_locals[return_variable]
-                return_value_type = type(return_value).__name__
-                debug_log.append(f"Return variable '{return_variable}' = {return_value_type}")
-
-                # Convert to serializable format
-                if isinstance(return_value, (list, tuple)):
-                    return_value = [str(item) for item in return_value]
-                elif not isinstance(return_value, (str, int, float, bool, dict)):
-                    return_value = str(return_value)
-
-            # Get all variables created in script
-            created_variables = {
-                k: {"type": type(v).__name__, "value": str(v)[:100]}
-                for k, v in exec_locals.items()
-                if not k.startswith('_')
-            }
-
-            result = {
-                "success": True,
-                "message": "Script executed successfully",
-                "script_description": script_description,
-                "output": output_text if output_text else None,
-                "errors": error_text if error_text else None,
-                "return_value": return_value,
-                "return_value_type": return_value_type,
-                "created_variables": created_variables,
-                "debug_log": debug_log
-            }
-
-            # Redraw views if geometry was modified
-            sc.doc.Views.Redraw()
-
-            return result
-
-        except Exception as e:
-            import traceback
-
-            # Restore stdout/stderr
-            sys.stdout = old_stdout
-            sys.stderr = old_stderr
-
-            output_text = captured_output.getvalue()
-            error_text = captured_errors.getvalue()
-
-            return {
-                "success": False,
-                "error": f"Script execution failed: {str(e)}",
-                "traceback": traceback.format_exc(),
-                "output": output_text if output_text else None,
-                "errors": error_text if error_text else None,
-                "debug_log": debug_log,
-                "script_description": script_description
-            }
-
-    except Exception as e:
-        import traceback
-        return {
-            "success": False,
-            "error": f"Error in script handler: {str(e)}",
-            "traceback": traceback.format_exc()
-        }
-
-
-# ============================================================================
-# WORKFLOW SUGGESTION TOOL
-# ============================================================================
-
-@gh_tool(
-    name="suggest_gh_workflow",
-    description=(
-        "Get workflow suggestions based on file metadata and user goals. "
-        "Analyzes available Grasshopper files and their relationships to suggest "
-        "optimal workflows for achieving specific design or analysis goals.\n\n"
-        "**Use Cases:**\n"
-        "- User wants to know which files to use for a complete workflow\n"
-        "- Understanding file dependencies and proper execution order\n"
-        "- Learning what inputs are needed for a workflow\n"
-        "- Finding workflows by category or tags\n\n"
-        "**Parameters:**\n"
-        "- **goal** (str, optional): User's goal (e.g., 'structural design', 'complete roof')\n"
-        "- **category** (str, optional): Filter by category (e.g., 'structural', 'geometry')\n"
-        "- **workflow_id** (str, optional): Get specific workflow by ID\n\n"
-        "**Returns:**\n"
-        "Suggested workflows with step-by-step instructions, required files, inputs, and outputs."
-    )
-)
 async def suggest_gh_workflow(
     goal: str = "",
     category: str = "",
@@ -6047,148 +5321,3 @@ async def suggest_gh_workflow(
     })
 
 
-@bridge_handler("/suggest_workflow")
-def handle_suggest_workflow(data):
-    """Bridge handler for workflow suggestions"""
-    try:
-        import os
-        import json
-
-        goal = data.get('goal', '').lower()
-        category = data.get('category', '').lower()
-        workflow_id = data.get('workflow_id', '')
-
-        # Get the library path and load metadata
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        library_path = os.path.join(script_dir, "Grasshopper File Library")
-        metadata_path = os.path.join(library_path, "metadata.json")
-
-        if not os.path.exists(metadata_path):
-            return {
-                "success": False,
-                "error": "metadata.json not found in Grasshopper File Library",
-                "suggestion": "Create a metadata.json file to enable workflow suggestions"
-            }
-
-        # Load metadata
-        with open(metadata_path, 'r', encoding='utf-8') as f:
-            metadata = json.load(f)
-
-        workflows = metadata.get('workflows', [])
-        files = metadata.get('files', [])
-
-        if not workflows:
-            return {
-                "success": True,
-                "message": "No workflows defined in metadata",
-                "available_files": [f['filename'] for f in files],
-                "suggestion": "Add workflow definitions to metadata.json"
-            }
-
-        # Filter workflows
-        suggested_workflows = []
-
-        for workflow in workflows:
-            # Filter by workflow_id if specified
-            if workflow_id and workflow.get('id') != workflow_id:
-                continue
-
-            # Filter by category
-            if category:
-                # Check if any files in workflow match category
-                workflow_categories = set()
-                for step in workflow.get('steps', []):
-                    step_file = step.get('file')
-                    file_meta = next((f for f in files if f['filename'] == step_file), None)
-                    if file_meta:
-                        workflow_categories.add(file_meta.get('category', ''))
-
-                if category not in workflow_categories:
-                    continue
-
-            # Filter by goal (search in name, description, tags)
-            if goal:
-                searchable_text = (
-                    workflow.get('name', '') + ' ' +
-                    workflow.get('description', '')
-                ).lower()
-
-                # Also check file tags
-                for step in workflow.get('steps', []):
-                    step_file = step.get('file')
-                    file_meta = next((f for f in files if f['filename'] == step_file), None)
-                    if file_meta:
-                        searchable_text += ' ' + ' '.join(file_meta.get('tags', []))
-
-                if goal not in searchable_text:
-                    continue
-
-            suggested_workflows.append(workflow)
-
-        # If no workflows matched filters, return all workflows
-        if not suggested_workflows and not workflow_id:
-            suggested_workflows = workflows
-
-        return {
-            "success": True,
-            "workflows": suggested_workflows,
-            "workflow_count": len(suggested_workflows),
-            "library_info": metadata.get('library_info', {}),
-            "message": f"Found {len(suggested_workflows)} workflow(s)"
-        }
-
-    except Exception as e:
-        import traceback
-        return {
-            "success": False,
-            "error": f"Error suggesting workflows: {str(e)}",
-            "traceback": traceback.format_exc()
-        }
-
-
-# All tools are now automatically registered using the @gh_tool decorator
-# Summary of available tools:
-#
-# FILE MANAGEMENT (5 tools):
-# 1. list_gh_files - List available .gh files in library
-# 2. open_gh_file - Open .gh files (auto-launches Grasshopper if needed)
-# 3. open_all_gh_files - Open all .gh files at once (NEW!)
-# 4. get_active_gh_files - Get currently open files
-# 5. close_gh_file - Close specific files
-#
-# EML PARAMETER TOOLS (4 tools):
-# 6. list_eml_parameters - Discover all eml_ prefixed parameters
-# 7. get_eml_parameter_value - Extract value from eml_ parameter
-# 8. set_eml_parameter_value - Set value for eml_ parameter
-# 9. suggest_eml_connections - Suggest connections between eml_ parameters
-#
-# CROSS-FILE WORKFLOW TOOLS (2 tools - NEW!):
-# 10. transfer_eml_geometry_between_files - Direct geometry transfer without baking
-# 11. execute_eml_workflow - Automated multi-file workflow orchestration
-#
-# TRADITIONAL GRASSHOPPER TOOLS (16 tools):
-# 12. list_grasshopper_sliders - Basic slider listing
-# 13. set_grasshopper_slider - Set individual slider value
-# 14. get_grasshopper_overview - File overview and component counts
-# 15. analyze_grasshopper_sliders - Detailed slider analysis with connections
-# 16. get_grasshopper_components - Complete component mapping
-# 17. set_multiple_grasshopper_sliders - Batch slider updates
-# 18. debug_grasshopper_state - Comprehensive debugging information
-# 19. list_grasshopper_valuelist_components - List ValueList components and options
-# 20. set_grasshopper_valuelist_selection - Change ValueList selections
-# 21. list_grasshopper_panels - List Panel components and text content
-# 22. set_grasshopper_panel_text - Update Panel text content
-# 23. get_grasshopper_panel_data - Extract data and values from Panels
-# 24. analyze_grasshopper_inputs_with_context - Enhanced input analysis with groups and annotations
-# 25. analyze_grasshopper_outputs_with_context - Enhanced output analysis with groups and annotations
-# 26. set_grasshopper_geometry_input - Set Rhino geometry to Grasshopper parameter
-# 27. extract_grasshopper_geometry_output - Extract and optionally bake Grasshopper geometry output
-#
-# USER-CONTROLLED TOOLS (2 tools):
-# 28. bake_grasshopper_geometry_to_rhino - Explicit baking with user confirmation and layer control
-# 29. execute_custom_python_script - Custom script execution with comprehensive debugging
-#
-# WORKFLOW TOOLS (1 tool - NEW!):
-# 30. suggest_gh_workflow - Intelligent workflow suggestions based on metadata
-#
-# TOTAL: 30 tools (5 file management + 4 eml + 2 workflow + 16 traditional + 2 user-controlled + 1 workflow suggestion)

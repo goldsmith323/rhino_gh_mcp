@@ -9,6 +9,11 @@ This is the **complete, production-ready toolset** with all advanced features in
 - Custom Python script execution
 - Workflow suggestions and automation
 
+**What's NEW in Level 4:**
+- **All 19 tools from Level 3** (single-file operations)
+- **PLUS 12 new tools** for multi-file workflows and library management
+- **Total: 31 tools** for complete Grasshopper automation
+
 ## Prerequisites
 -  Level 3 (Intermediate Integration) completed successfully
 -  Understanding of Grasshopper workflows
@@ -16,32 +21,28 @@ This is the **complete, production-ready toolset** with all advanced features in
 
 ## What's Included
 
-### All Tools from Previous Levels PLUS:
+### All Tools from Level 3 (19 tools)
+All single-file Grasshopper operations from Level 3 are included
 
-### File Management Tools
+### NEW in Level 4 - GH Library Management Tools (4 tools)
 - `list_gh_files()` - List all files in GH Library with metadata
 - `open_gh_file(file_name, open_multiple)` - Open files from library
-- `get_active_gh_files()` - List currently open files
-- `set_active_gh_file(file_name)` - Switch between open files
 - `open_all_gh_files(file_names)` - Open multiple files at once
 - `close_gh_file(file_name, save_changes)` - Close files
 
-### EML Workflow Tools
+### NEW in Level 4 - EML Workflow Tools (5 tools)
 - `list_eml_parameters()` - Discover all eml_ prefixed parameters
 - `get_eml_parameter_value(parameter_name)` - Read eml_ parameter
 - `set_eml_parameter_value(parameter_name, value)` - Write eml_ parameter
 - `suggest_eml_connections()` - Auto-suggest parameter connections
 - `transfer_eml_geometry_between_files(source_file, source_param, target_file, target_param)` - Transfer geometry
 
-### Advanced Workflows
+### NEW in Level 4 - Advanced Workflows (3 tools)
 - `execute_eml_workflow(workflow_steps)` - Execute multi-step workflows
 - `execute_custom_python_script(script_code, inputs)` - Run custom Python in GH
 - `suggest_gh_workflow(task_description)` - AI workflow suggestions
 
-### Advanced Geometry Operations
-- Full geometry type conversion system
-- Multi-file geometry transfers
-- Batch baking operations
+**Summary: 19 tools from Level 3 + 12 new tools = 31 total tools**
 
 ## Grasshopper File Library Structure
 
@@ -192,7 +193,7 @@ Restart to discover all advanced tools.
 
 ## Next Steps
 
-‰ **Congratulations!** You now have the complete MCP Rhino/Grasshopper integration toolkit.
+ï¿½ **Congratulations!** You now have the complete MCP Rhino/Grasshopper integration toolkit.
 
 ### What You Can Build:
 - Automated parametric design systems

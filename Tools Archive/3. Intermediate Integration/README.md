@@ -1,7 +1,15 @@
 # Level 3: Intermediate Integration
 
 ## Purpose
-This level provides comprehensive tools for working with **single Grasshopper files**. You'll learn to manipulate sliders, value lists, panels, geometry inputs/outputs, and bake results to Rhino - all focusing on one GH file at a time.
+This level provides comprehensive tools for working with **single Grasshopper files**. You'll learn to manipulate sliders, value lists, panels, geometry inputs/outputs, and bake results to Rhino - all focusing on ONE GH file at a time.
+
+**Note:** This level does NOT include:
+- Grasshopper File Library management
+- EML (External Multi-Link) parameters for multi-file workflows
+- Automated workflow execution between files
+- Custom Python script execution
+
+Those advanced features are in Level 4 (Advanced Integration).
 
 ## Prerequisites
 -  Level 2 (Early Integration) completed successfully
@@ -27,29 +35,38 @@ All current Rhino tools from Level 2, plus:
 - `get_rhino_object_geometry()` - Extract geometry data
 - `get_curve_length()` - Get curve length
 
-### Grasshopper Tools (12+ tools)
+### Grasshopper Tools (19 tools)
 
-**Slider Operations:**
+**File Management (2 tools):**
+- `get_active_gh_files()` - See what files are open
+- `set_active_gh_file(file_name)` - Switch between open files
+
+**Slider Operations (4 tools):**
 - `list_grasshopper_sliders(file_name)`
 - `set_grasshopper_slider(file_name, slider_name, value)`
 - `set_multiple_grasshopper_sliders(file_name, slider_updates)`
+- `analyze_grasshopper_sliders(file_name)` - Detailed analysis with connections
 
-**ValueList Operations:**
+**ValueList Operations (2 tools):**
 - `list_grasshopper_valuelist_components(file_name)`
 - `set_grasshopper_valuelist_selection(file_name, valuelist_name, selection)`
 
-**Panel Operations:**
-- `list_grasshopper_panels()`
+**Panel Operations (3 tools):**
+- `list_grasshopper_panels(file_name)`
 - `set_grasshopper_panel_text(file_name, panel_name, new_text)`
-- `get_grasshopper_panel_data(panel_name)`
+- `get_grasshopper_panel_data(file_name, panel_name)`
 
-**Geometry Operations:**
+**Geometry Operations (3 tools):**
 - `set_grasshopper_geometry_input(file_name, parameter_name, rhino_object_ids)`
 - `extract_grasshopper_geometry_output(file_name, parameter_name)`
 - `bake_grasshopper_geometry_to_rhino(file_name, parameter_name, layer_name)`
 
-**Component Inspection:**
-- `get_grasshopper_components()` - List all components
+**Component Analysis (5 tools):**
+- `get_grasshopper_components(file_name)` - List all components
+- `get_grasshopper_overview(file_name)` - File statistics
+- `debug_grasshopper_state(file_name)` - Debugging info
+- `analyze_grasshopper_inputs_with_context(file_name)` - Input analysis
+- `analyze_grasshopper_outputs_with_context(file_name)` - Output analysis
 
 ## How to Use
 
