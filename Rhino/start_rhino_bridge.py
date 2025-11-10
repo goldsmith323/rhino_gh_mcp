@@ -1,7 +1,5 @@
 #!/usr/bin/env python
-#! python 3
-# venv: rhino-gh-mcp-bridge
-# r: requests
+#r: requests
 """
 Rhino Bridge Startup Script
 

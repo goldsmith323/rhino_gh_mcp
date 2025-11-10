@@ -79,7 +79,7 @@ def filter_debug_response(response: Dict[str, Any]) -> Dict[str, Any]:
         "Coordinates are specified in Rhino's current units (usually millimeters or inches). "
         "\n\n**Parameters:**\n"
         "- **start_x** (float): X-coordinate of the line start point\n"
-        "- **start_y** (float): Y-coordinate of the line start point\n" 
+        "- **start_y** (float): Y-coordinate of the line start point\n"
         "- **start_z** (float): Z-coordinate of the line start point\n"
         "- **end_x** (float): X-coordinate of the line end point\n"
         "- **end_y** (float): Y-coordinate of the line end point\n"
@@ -89,28 +89,28 @@ def filter_debug_response(response: Dict[str, Any]) -> Dict[str, Any]:
     )
 )
 async def draw_line_rhino(
-    start_x: float, 
-    start_y: float, 
-    start_z: float, 
-    end_x: float, 
-    end_y: float, 
+    start_x: float,
+    start_y: float,
+    start_z: float,
+    end_x: float,
+    end_y: float,
     end_z: float
 ) -> Dict[str, Any]:
     """
     Draw a line in Rhino between two 3D points via HTTP bridge.
-    
+
     Args:
         start_x: X-coordinate of start point
-        start_y: Y-coordinate of start point  
+        start_y: Y-coordinate of start point
         start_z: Z-coordinate of start point
         end_x: X-coordinate of end point
         end_y: Y-coordinate of end point
         end_z: Z-coordinate of end point
-        
+
     Returns:
         Dict containing line creation results
     """
-    
+
     request_data = {
         "start_x": start_x,
         "start_y": start_y,
@@ -119,7 +119,7 @@ async def draw_line_rhino(
         "end_y": end_y,
         "end_z": end_z
     }
-    
+
     return call_bridge_api("/draw_line", request_data)
 
 @bridge_handler("/draw_line")
@@ -128,7 +128,7 @@ def handle_draw_line(data):
     try:
         # Import Rhino modules here since this runs inside Rhino
         import rhinoscriptsyntax as rs
-        
+
         # Extract coordinates
         start_x = float(data.get('start_x', 0))
         start_y = float(data.get('start_y', 0))
@@ -136,13 +136,13 @@ def handle_draw_line(data):
         end_x = float(data.get('end_x', 0))
         end_y = float(data.get('end_y', 0))
         end_z = float(data.get('end_z', 0))
-        
+
         # Create the line in Rhino
         start_point = [start_x, start_y, start_z]
         end_point = [end_x, end_y, end_z]
-        
+
         line_id = rs.AddLine(start_point, end_point)
-        
+
         if line_id:
             line_length = rs.CurveLength(line_id)
             result = {
@@ -187,11 +187,11 @@ def handle_draw_line(data):
 async def get_rhino_info() -> Dict[str, Any]:
     """
     Get information about the current Rhino session via HTTP bridge.
-    
+
     Returns:
         Dict containing Rhino session information
     """
-    
+
     return call_bridge_api("/get_rhino_info", {})
 
 @bridge_handler("/get_rhino_info")
@@ -200,12 +200,12 @@ def handle_get_rhino_info(data):
     try:
         # Import Rhino modules here since this runs inside Rhino
         import rhinoscriptsyntax as rs
-        
+
         info = {
             "rhino_available": True,
             "grasshopper_available": False,  # Will be updated if GH is available
         }
-        
+
         # Try to get Grasshopper availability
         try:
             import ghpython
@@ -213,15 +213,15 @@ def handle_get_rhino_info(data):
             info["grasshopper_available"] = True
         except ImportError:
             pass
-        
+
         # Try to get Rhino-specific information
         try:
-            info["document_units"] = rs.UnitSystemName(rs.UnitSystem())
+            info["document_units"] = rs.UnitSystemName()
             info["object_count"] = rs.ObjectCount()
             info["is_command_running"] = rs.IsCommand()
         except Exception as e:
             info["rhino_error"] = str(e)
-        
+
         result = {
             "success": True,
             "info": info,
@@ -293,14 +293,14 @@ async def typical_roof_truss_generator(
 ) -> Dict[str, Any]:
     """
     Generate a typical roof truss structure based on an upper chord line.
-    
+
     IMPORTANT: This tool requires the user to explicitly specify the upper chord line coordinates.
     Do NOT call this tool with default values - always ask the user to define:
-    1. The upper chord line (start and end points)  
+    1. The upper chord line (start and end points)
     2. Truss depth
     3. Number of divisions
     4. Truss type (optional)
-    
+
     Available truss types:
     - Pratt: Vertical members with diagonals in compression
     - Warren: No verticals, alternating diagonal members
@@ -308,7 +308,7 @@ async def typical_roof_truss_generator(
     - Brown: Similar to Pratt but with different diagonal orientation
     - Howe: Vertical members with diagonals in tension
     - Onedir: Single direction diagonals only
-    
+
     Args:
         upper_line_start_x: X-coordinate of upper line start point (REQUIRED from user)
         upper_line_start_y: Y-coordinate of upper line start point (REQUIRED from user)
@@ -321,11 +321,11 @@ async def typical_roof_truss_generator(
         truss_type: Type of truss (Pratt, Warren, Vierendeel, Brown, Howe, Onedir)
         clear_previous: Whether to clear previously generated truss objects
         truss_plane_direction: Direction of truss plane ("perpendicular" for auto-perpendicular)
-        
+
     Returns:
         Dict containing truss generation results
     """
-    
+
     request_data = {
         "upper_line_start_x": upper_line_start_x,
         "upper_line_start_y": upper_line_start_y,
@@ -339,7 +339,7 @@ async def typical_roof_truss_generator(
         "clear_previous": clear_previous,
         "truss_plane_direction": truss_plane_direction
     }
-    
+
     return call_bridge_api("/generate_truss", request_data)
 
 @bridge_handler("/generate_truss")
@@ -349,7 +349,7 @@ def handle_generate_truss(data):
         # Import Rhino modules here since this runs inside Rhino
         import rhinoscriptsyntax as rs
         import math
-        
+
         # Extract truss parameters
         upper_line_start_x = float(data.get('upper_line_start_x', 0))
         upper_line_start_y = float(data.get('upper_line_start_y', 0))
@@ -362,11 +362,11 @@ def handle_generate_truss(data):
         truss_type = data.get('truss_type', 'Pratt')
         clear_previous = data.get('clear_previous', True)
         truss_plane_direction = data.get('truss_plane_direction', 'perpendicular')
-        
+
         # Clear previous truss if requested
         if clear_previous:
             clear_previous_trusses()
-        
+
         # Generate truss geometry
         truss_members = create_truss_geometry(
             [upper_line_start_x, upper_line_start_y, upper_line_start_z],
@@ -376,7 +376,7 @@ def handle_generate_truss(data):
             truss_type,
             truss_plane_direction
         )
-        
+
         if truss_members:
             result = {
                 "success": True,
@@ -422,7 +422,7 @@ def clear_previous_trusses():
                 user_text = rs.GetUserText(obj_id, "object_type")
                 if user_text == "truss_member":
                     truss_objects.append(obj_id)
-            
+
             if truss_objects:
                 rs.DeleteObjects(truss_objects)
                 print(f"Cleared {len(truss_objects)} previous truss members")
@@ -434,33 +434,33 @@ def create_truss_geometry(start_point, end_point, depth, divisions, truss_type, 
     try:
         import rhinoscriptsyntax as rs
         import math
-        
+
         truss_members = []
-        
+
         # Vector from start to end of upper chord
-        upper_vector = [end_point[0] - start_point[0], 
-                      end_point[1] - start_point[1], 
+        upper_vector = [end_point[0] - start_point[0],
+                      end_point[1] - start_point[1],
                       end_point[2] - start_point[2]]
-        
+
         # Length of upper chord
         upper_length = math.sqrt(upper_vector[0]**2 + upper_vector[1]**2 + upper_vector[2]**2)
-        
+
         # Normalize upper vector
         if upper_length > 0:
             upper_unit = [v / upper_length for v in upper_vector]
         else:
             upper_unit = [1, 0, 0]
-        
+
         # Calculate perpendicular direction for truss depth
         depth_vector = [0, 0, -depth]  # Truss extends downward
-        
+
         # Generate division points along upper chord
         division_points_top = []
         division_points_bottom = []
-        
+
         for i in range(divisions + 1):
             t = i / divisions
-            
+
             # Top chord points
             top_point = [
                 start_point[0] + t * upper_vector[0],
@@ -468,7 +468,7 @@ def create_truss_geometry(start_point, end_point, depth, divisions, truss_type, 
                 start_point[2] + t * upper_vector[2]
             ]
             division_points_top.append(top_point)
-            
+
             # Bottom chord points (offset by depth)
             bottom_point = [
                 top_point[0] + depth_vector[0],
@@ -476,7 +476,7 @@ def create_truss_geometry(start_point, end_point, depth, divisions, truss_type, 
                 top_point[2] + depth_vector[2]
             ]
             division_points_bottom.append(bottom_point)
-        
+
         # Create top chord segments
         for i in range(divisions):
             line_id = rs.AddLine(division_points_top[i], division_points_top[i + 1])
@@ -489,7 +489,7 @@ def create_truss_geometry(start_point, end_point, depth, divisions, truss_type, 
                     "start": division_points_top[i],
                     "end": division_points_top[i + 1]
                 })
-        
+
         # Create bottom chord segments
         for i in range(divisions):
             line_id = rs.AddLine(division_points_bottom[i], division_points_bottom[i + 1])
@@ -502,7 +502,7 @@ def create_truss_geometry(start_point, end_point, depth, divisions, truss_type, 
                     "start": division_points_bottom[i],
                     "end": division_points_bottom[i + 1]
                 })
-        
+
         # Create web members based on truss type
         if truss_type.lower() == "pratt":
             # Pratt: Verticals + diagonals in compression
@@ -517,13 +517,13 @@ def create_truss_geometry(start_point, end_point, depth, divisions, truss_type, 
                         "start": division_points_top[i],
                         "end": division_points_bottom[i]
                     })
-            
+
             for i in range(divisions):
                 if i % 2 == 0:  # Alternate diagonals
                     line_id = rs.AddLine(division_points_bottom[i], division_points_top[i + 1])
                 else:
                     line_id = rs.AddLine(division_points_top[i], division_points_bottom[i + 1])
-                
+
                 if line_id:
                     rs.SetUserText(line_id, "object_type", "truss_member")
                     rs.SetUserText(line_id, "member_type", "diagonal")
@@ -533,7 +533,7 @@ def create_truss_geometry(start_point, end_point, depth, divisions, truss_type, 
                         "start": division_points_bottom[i] if i % 2 == 0 else division_points_top[i],
                         "end": division_points_top[i + 1] if i % 2 == 0 else division_points_bottom[i + 1]
                     })
-        
+
         elif truss_type.lower() == "warren":
             # Warren: No verticals, alternating diagonals
             for i in range(divisions):
@@ -543,7 +543,7 @@ def create_truss_geometry(start_point, end_point, depth, divisions, truss_type, 
                 else:
                     line_id = rs.AddLine(division_points_top[i], division_points_bottom[i + 1])
                     start_pt, end_pt = division_points_top[i], division_points_bottom[i + 1]
-                
+
                 if line_id:
                     rs.SetUserText(line_id, "object_type", "truss_member")
                     rs.SetUserText(line_id, "member_type", "diagonal")
@@ -553,7 +553,7 @@ def create_truss_geometry(start_point, end_point, depth, divisions, truss_type, 
                         "start": start_pt,
                         "end": end_pt
                     })
-        
+
         elif truss_type.lower() == "vierendeel":
             # Vierendeel: Only verticals, no diagonals (moment frame)
             for i in range(divisions + 1):
@@ -567,7 +567,7 @@ def create_truss_geometry(start_point, end_point, depth, divisions, truss_type, 
                         "start": division_points_top[i],
                         "end": division_points_bottom[i]
                     })
-        
+
         elif truss_type.lower() == "howe":
             # Howe: Verticals + diagonals in tension (opposite of Pratt)
             for i in range(divisions + 1):
@@ -581,13 +581,13 @@ def create_truss_geometry(start_point, end_point, depth, divisions, truss_type, 
                         "start": division_points_top[i],
                         "end": division_points_bottom[i]
                     })
-            
+
             for i in range(divisions):
                 if i % 2 == 0:
                     line_id = rs.AddLine(division_points_top[i], division_points_bottom[i + 1])
                 else:
                     line_id = rs.AddLine(division_points_bottom[i], division_points_top[i + 1])
-                
+
                 if line_id:
                     rs.SetUserText(line_id, "object_type", "truss_member")
                     rs.SetUserText(line_id, "member_type", "diagonal")
@@ -597,7 +597,7 @@ def create_truss_geometry(start_point, end_point, depth, divisions, truss_type, 
                         "start": division_points_top[i] if i % 2 == 0 else division_points_bottom[i],
                         "end": division_points_bottom[i + 1] if i % 2 == 0 else division_points_top[i + 1]
                     })
-        
+
         elif truss_type.lower() == "brown":
             # Brown: Similar to Pratt with different diagonal pattern
             for i in range(divisions + 1):
@@ -611,12 +611,12 @@ def create_truss_geometry(start_point, end_point, depth, divisions, truss_type, 
                         "start": division_points_top[i],
                         "end": division_points_bottom[i]
                     })
-            
+
             for i in range(divisions):
                 # Brown pattern: both diagonals in each bay
                 line_id1 = rs.AddLine(division_points_bottom[i], division_points_top[i + 1])
                 line_id2 = rs.AddLine(division_points_top[i], division_points_bottom[i + 1])
-                
+
                 for line_id, start_pt, end_pt in [
                     (line_id1, division_points_bottom[i], division_points_top[i + 1]),
                     (line_id2, division_points_top[i], division_points_bottom[i + 1])
@@ -630,7 +630,7 @@ def create_truss_geometry(start_point, end_point, depth, divisions, truss_type, 
                             "start": start_pt,
                             "end": end_pt
                         })
-        
+
         elif truss_type.lower() == "onedir":
             # Onedir: Single direction diagonals only
             for i in range(divisions):
@@ -644,7 +644,7 @@ def create_truss_geometry(start_point, end_point, depth, divisions, truss_type, 
                         "start": division_points_bottom[i],
                         "end": division_points_top[i + 1]
                     })
-        
+
         else:
             # Default to Pratt if unknown type
             for i in range(divisions + 1):
@@ -658,13 +658,13 @@ def create_truss_geometry(start_point, end_point, depth, divisions, truss_type, 
                         "start": division_points_top[i],
                         "end": division_points_bottom[i]
                     })
-            
+
             for i in range(divisions):
                 if i % 2 == 0:
                     line_id = rs.AddLine(division_points_bottom[i], division_points_top[i + 1])
                 else:
                     line_id = rs.AddLine(division_points_top[i], division_points_bottom[i + 1])
-                
+
                 if line_id:
                     rs.SetUserText(line_id, "object_type", "truss_member")
                     rs.SetUserText(line_id, "member_type", "diagonal")
@@ -674,9 +674,9 @@ def create_truss_geometry(start_point, end_point, depth, divisions, truss_type, 
                         "start": division_points_bottom[i] if i % 2 == 0 else division_points_top[i],
                         "end": division_points_top[i + 1] if i % 2 == 0 else division_points_bottom[i + 1]
                     })
-        
+
         return truss_members
-        
+
     except Exception as e:
         print(f"Error in create_truss_geometry: {str(e)}")
         return []
@@ -920,6 +920,90 @@ def handle_get_object_geometry(data):
             "traceback": traceback.format_exc()
         }
         return filter_debug_response(result)
+
+# Add rhino tool and bridge handler for getting the length of a curve and returning the value
+@rhino_tool(
+    name="get_curve_length",
+    description=(
+        "Get the length of a curve in Rhino by its ID. This tool retrieves the total length "
+        "of the specified curve object.\n\n"
+        "**Parameters:**\n"
+        "- **object_id** (str): The GUID/ID of the Rhino curve object\n"
+        "\n**Returns:**\n"
+        "Dictionary containing the length of the curve."
+    )
+)
+async def get_curve_length(object_id: str) -> Dict[str, Any]:
+    """
+    Get the length of a curve in Rhino via HTTP bridge.
+
+    Args:
+        object_id: GUID/ID of the Rhino curve object
+
+    Returns:
+        Dictionary containing the length of the curve.
+    """
+
+    request_data = {"object_id": object_id}
+
+    return call_bridge_api("/get_curve_length", request_data)
+
+
+@bridge_handler("/get_curve_length")
+def handle_get_curve_length(data):
+    """Bridge handler for getting curve length"""
+    try:
+        import rhinoscriptsyntax as rs
+
+        object_id = data.get('object_id', '')
+        if not object_id:
+            result = {
+                "success": False,
+                "error": "No object_id provided"
+            }
+            return filter_debug_response(result)
+
+        # Convert string to GUID
+        try:
+            import System
+            guid = System.Guid(object_id)
+        except:
+            result = {
+                "success": False,
+                "error": f"Invalid object_id format: {object_id}"
+            }
+            return filter_debug_response(result)
+
+        # Check if object exists and is a curve
+        if not rs.IsObject(guid) or not rs.IsCurve(guid):
+            result = {
+                "success": False,
+                "error": f"Object with ID {object_id} is not a valid curve"
+            }
+            return filter_debug_response(result)
+
+        # Get curve length
+        length = rs.CurveLength(guid)
+        result = {
+            "success": True,
+            "curve_length": length,
+            "message": f"Curve length retrieved successfully: {length}"
+        }
+        return filter_debug_response(result)
+
+    except ImportError:
+        result = {
+            "success": False,
+            "error": "Rhino is not available"
+        }
+        return filter_debug_response(result)
+    except Exception as e:
+        result = {
+            "success": False,
+            "error": f"Error getting curve length: {str(e)}"
+        }
+        return filter_debug_response(result)
+
 
 # All tools are now automatically registered using the @rhino_tool decorator
 # Simply add @rhino_tool decorator to any new function and it will be available in MCP
