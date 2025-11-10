@@ -1,41 +1,95 @@
 # MCP Server
 
-This directory contains everything needed to run the MCP server and integrate with Claude Desktop.
+This directory contains the core MCP server files for Rhino Grasshopper integration with Claude Desktop.
 
 ## Files
 
 - **`main.py`** - Main MCP server that registers and serves tools
 - **`bridge_client.py`** - HTTP client for communicating with Rhino bridge server
-- **`requirements.txt`** - Python dependencies for the MCP server
-- **`config/`** - Configuration templates and setup guides for Claude Desktop
+- **`Setup/`** - Environment setup, dependencies, and configuration files
 
-## Setup
+## Quick Start
 
-### 1. Install Dependencies (Python 3.10+)
-```bash
-cd MCP/
-pip install -r requirements.txt
+**📖 For complete setup instructions, see [`Setup/setup_guide.md`](Setup/setup_guide.md)**
+
+### 1. Install UV Package Manager
+
+**Windows:**
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
 
-### 2. Configure Claude Desktop
-1. Copy the configuration from `config/mcp_client_config.json`
-2. Update the path for "command" to point to the python executable inside your virtual environment (or just put 'python' if no virtual env being used)
-3. Update the path for "args" to point to your `main.py` file
-4. Add to Claude Desktop config (see `config/MCP_CLIENT_SETUP.md`)
-5. Restart Claude Desktop
+**macOS/Linux:**
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
 
-### 3. Start Rhino Bridge Server
+### 2. Setup Environment
+
+**Windows:**
+```cmd
+cd MCP\Setup
+setup_env.bat
+```
+
+**macOS/Linux:**
+```bash
+cd MCP/Setup
+chmod +x setup_env.sh
+./setup_env.sh
+```
+
+### 3. Configure Claude Desktop
+
+Add this to your `claude_desktop_config.json` (replace `YOUR_REPO_PATH`):
+
+**Windows:**
+```json
+{
+  "mcpServers": {
+    "Rhino Grasshopper MCP": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "C:\\YOUR_REPO_PATH\\rhino_gh_mcp\\MCP\\Setup",
+        "run",
+        "python",
+        "..\\main.py"
+      ]
+    }
+  }
+}
+```
+
+**macOS/Linux:**
+```json
+{
+  "mcpServers": {
+    "Rhino Grasshopper MCP": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "/YOUR_REPO_PATH/rhino_gh_mcp/MCP/Setup",
+        "run",
+        "python",
+        "../main.py"
+      ]
+    }
+  }
+}
+```
+
+### 4. Start Rhino Bridge Server
 1. Open Rhino 8
-2. Follow the guide in `Rhino/README.md`
+2. Follow the guide in `../Rhino/README.md`
 
-### 4. Start MCP Server
-```bash
-python main.py
-```
+### 5. Restart Claude Desktop
 
-The server will:
+## How It Works
+
+When Claude Desktop starts, the MCP server will:
 - Auto-discover tools from the `../Tools/` directory using decorators
-- Try to connect to the Rhino bridge server at `localhost:8080`
+- Connect to the Rhino bridge server at `localhost:8080`
 - Register all discovered tools with the MCP protocol
 - Wait for requests from Claude Desktop
 

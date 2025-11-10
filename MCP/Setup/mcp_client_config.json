@@ -1,9 +1,13 @@
 {
   "mcpServers": {
     "Rhino Grasshopper MCP": {
-      "command": "C:\\Users\\USERNAME\\Envs\\rhino-mcp\\Scripts\\python.exe",
+      "command": "uv",
       "args": [
-        "C:\\Users\\USERNAME\\Documents\\GitHub\\rhino_gh_mcp\\main.py"
+        "--directory",
+        "C:\\FULL_PATH_TO\\rhino_gh_mcp\\MCP\\Setup",
+        "run",
+        "python",
+        "..\\main.py"
       ],
       "description": "Rhino 3D and Grasshopper parametric design tools"
     }
