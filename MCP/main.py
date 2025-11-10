@@ -25,7 +25,7 @@ except ImportError:
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'Tools'))
 try:
-    from tool_registry import discover_tools, get_rhino_tools, get_gh_tools, get_all_tools
+    from tool_registry import discover_tools, get_rhino_tools, get_gh_tools, get_custom_tools, get_all_tools
 except ImportError as e:
     print(f"Error importing tool registry: {e}")
     sys.exit(1)
@@ -57,6 +57,15 @@ def register_tools():
     print("Discovering tools...")
     discovered = discover_tools()
 
+    # Register Custom tools (test tools, utilities, etc.)
+    custom_tools = get_custom_tools()
+    for tool_def in custom_tools:
+        mcp.tool(
+            name=tool_def["name"],
+            description=tool_def["description"]
+        )(tool_def["function"])
+        logger.info(f"Auto-registered Custom tool: {tool_def['name']}")
+
     # Register Rhino tools
     rhino_tools = get_rhino_tools()
     for tool_def in rhino_tools:
@@ -75,7 +84,7 @@ def register_tools():
         )(tool_def["function"])
         logger.info(f"Auto-registered Grasshopper tool: {tool_def['name']}")
 
-    return len(rhino_tools), len(gh_tools)
+    return len(custom_tools), len(rhino_tools), len(gh_tools)
 
 def check_bridge_connection():
     """Check if bridge server is available"""
@@ -97,7 +106,7 @@ if __name__ == "__main__":
     print("This MCP server communicates with Rhino via HTTP bridge.")
 
     # Register all tools using auto-discovery
-    total_rhino, total_gh = register_tools()
+    total_custom, total_rhino, total_gh = register_tools()
 
     # Check bridge connection (optional - server will still start)
     bridge_ok = check_bridge_connection()
@@ -105,7 +114,7 @@ if __name__ == "__main__":
         print("Warning: Bridge server not available. Make sure to start it in Rhino before using tools.")
 
     # Print summary
-    print(f"Auto-discovered and registered {total_rhino} Rhino tools and {total_gh} Grasshopper tools")
+    print(f"Auto-discovered and registered {total_custom} Custom tools, {total_rhino} Rhino tools, and {total_gh} Grasshopper tools")
 
     # Start MCP server
     print("MCP server starting...")

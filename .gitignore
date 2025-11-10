@@ -73,6 +73,10 @@ Thumbs.db
 # Project specific
 *.log
 rhino_gh_mcp.log
+claude_desktop_config.json
+
+# Claude CLI
+.claude/
 
 # UV
 .uv/
