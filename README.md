@@ -151,11 +151,12 @@ Convention-based tools using `eml_` prefix for automated workflows:
 - `extract_grasshopper_geometry_output`
 - `debug_grasshopper_state`
 
-### Advanced Tools (4)
+### Advanced Tools (5)
 - `bake_grasshopper_geometry` - Bake geometry to Rhino with layer control
 - `execute_custom_grasshopper_script` - Run Python in GH context
 - `suggest_grasshopper_workflow` - Get workflow suggestions from metadata
 - `set_active_gh_file` - Switch active document
+- `predict_truss_tonnage` - Predict long span truss tonnage based on polynomial regression model from sample data
 
 ## Using Grasshopper Files
 

@@ -37,12 +37,13 @@ All single-file Grasshopper operations from Level 3 are included
 - `suggest_eml_connections()` - Auto-suggest parameter connections
 - `transfer_eml_geometry_between_files(source_file, source_param, target_file, target_param)` - Transfer geometry
 
-### NEW in Level 4 - Advanced Workflows (3 tools)
+### NEW in Level 4 - Advanced Workflows (4 tools)
 - `execute_eml_workflow(workflow_steps)` - Execute multi-step workflows
 - `execute_custom_python_script(script_code, inputs)` - Run custom Python in GH
 - `suggest_gh_workflow(task_description)` - AI workflow suggestions
+- `predict_truss_tonnage(span, depth)` - Tonnage prediction based on polynomial regression model from sample data
 
-**Summary: 19 tools from Level 3 + 12 new tools = 31 total tools**
+**Summary: 19 tools from Level 3 + 13 new tools = 32 total tools**
 
 ## Grasshopper File Library Structure
 
