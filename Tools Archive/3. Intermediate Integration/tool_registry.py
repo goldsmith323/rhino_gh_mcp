@@ -6,7 +6,6 @@ Developers can simply use @rhino_tool or @gh_tool decorators to register tools
 without manually updating registration lists.
 """
 
-import inspect
 import importlib
 import os
 import sys
@@ -322,18 +321,6 @@ def get_custom_tools() -> List[Dict[str, Any]]:
     """Get all registered custom tools in MCP format"""
     return [tool.to_dict() for tool in _custom_tools]
 
-def get_all_tools() -> List[Dict[str, Any]]:
-    """Get all registered tools in MCP format"""
-    return get_rhino_tools() + get_gh_tools() + get_custom_tools()
-
-def get_tool_endpoints() -> List[str]:
-    """Get all bridge endpoints needed for registered tools"""
-    return list(_bridge_handlers.keys())
-
 def get_bridge_handlers() -> Dict[str, Callable]:
     """Get all registered bridge handlers"""
     return _bridge_handlers.copy()
-
-def get_bridge_handler(endpoint: str) -> Optional[Callable]:
-    """Get a specific bridge handler by endpoint"""
-    return _bridge_handlers.get(endpoint)

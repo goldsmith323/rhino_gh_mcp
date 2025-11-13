@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 #r: requests
+#r: numpy
 """
 Rhino Bridge Startup Script
 

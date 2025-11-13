@@ -58,7 +58,7 @@ print(f"Bridge Server Running with DEBUG_MODE: {DEBUG_MODE}")
 
 # Try to import Rhino modules - these should be available inside Rhino
 try:
-    import rhinoscriptsyntax as rs
+    import rhinoscriptsyntax
     import Rhino
     RHINO_AVAILABLE = True
     print("Rhino modules loaded successfully")
@@ -69,7 +69,7 @@ except ImportError:
 # Try to import Grasshopper modules
 try:
     import ghpython
-    import grasshopper as gh
+    import grasshopper
     GRASSHOPPER_AVAILABLE = True
     print("Grasshopper modules loaded successfully")
 except ImportError:
@@ -78,7 +78,7 @@ except ImportError:
 
 # Import dynamic handler system
 try:
-    from tool_registry import discover_tools, get_bridge_handler
+    from tool_registry import discover_tools
     DYNAMIC_HANDLERS_AVAILABLE = True
     print("Dynamic handler system loaded")
 except ImportError as e:

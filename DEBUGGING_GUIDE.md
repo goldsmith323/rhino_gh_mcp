@@ -1,255 +1,169 @@
 # Debugging Guide
 
-This guide explains the debugging features of the MCP server to help diagnose and fix issues quickly.
+Quick reference for troubleshooting the Rhino/Grasshopper MCP server.
 
-## Overview
+## Quick Start
 
-The debugging system operates across three layers:
-1. **Bridge Client** (`MCP/bridge_client.py`) - HTTP communication error reporting
-2. **Bridge Server** (`Rhino/rhino_bridge_server.py`) - Server-side error handling
-3. **Handler Decorator** (`Tools/tool_registry.py`) - Handler execution monitoring
+**Getting an error?** Follow these steps:
+1. Check the error response in Claude (look for `error_type` and `debug_hint`)
+2. Open Rhino Python console for full traceback
+3. Enable DEBUG_MODE if you need more details (see below)
 
-## Error Information
+## DEBUG_MODE
 
-### 1. Bridge Client Errors (MCP Side)
+Controls how much information tools return in their responses.
 
-When a tool call fails, you'll now receive detailed error information including:
+### Toggle DEBUG_MODE
 
-#### Connection Errors
-```json
-{
-  "success": false,
-  "error": "Cannot connect to Rhino Bridge Server at http://localhost:8080...",
-  "error_type": "ConnectionError",
-  "endpoint": "/analyze_inputs_context",
-  "bridge_url": "http://localhost:8080"
-}
+**Location:** `C:\Users\SeyedZ\Documents\GitHub\rhino_gh_mcp\.env`
+
+```bash
+# Activate (verbose responses with full debugging info)
+DEBUG_MODE=true
+
+# Deactivate (concise responses, saves tokens)
+DEBUG_MODE=false
 ```
 
-**Common causes:**
-- Rhino bridge server is not running
+**After changing:** Restart both MCP server and Rhino bridge server.
+
+### What Changes?
+
+| Mode | Returns | Use When |
+|------|---------|----------|
+| `false` (default) | Essential data only | Normal operation, production |
+| `true` | Full details + debug logs + tracebacks | Troubleshooting, development |
+
+---
+
+## Error Types
+
+### ConnectionError
+**Problem:** Cannot connect to Rhino Bridge Server
+
+**Causes:**
+- Bridge server not running in Rhino
 - Wrong host/port configuration
-- Firewall blocking the connection
+- Firewall blocking connection
 
-**How to fix:**
-- Run the bridge server in Rhino using `start_rhino_bridge.py`
-- Check `RHINO_BRIDGE_HOST` and `RHINO_BRIDGE_PORT` environment variables
-- Verify firewall settings
+**Fix:**
+1. Start bridge in Rhino: Run `start_rhino_bridge.py` in Rhino Script Editor
+2. Check `.env` file for correct `RHINO_BRIDGE_HOST` and `RHINO_BRIDGE_PORT`
+3. Verify http://localhost:8080/status in browser
 
-#### Timeout Errors
-```json
-{
-  "success": false,
-  "error": "Request to Rhino Bridge Server timed out after 10 seconds",
-  "error_type": "Timeout",
-  "endpoint": "/analyze_inputs_context",
-  "request_data": {}
-}
-```
+---
 
-**Common causes:**
-- Handler is taking too long (e.g., complex Grasshopper analysis)
+### Timeout
+**Problem:** Request timed out after 10 seconds
+
+**Causes:**
+- Complex Grasshopper computation taking too long
 - Rhino is frozen or unresponsive
-- Network issues
 
-**How to fix:**
-- Check Rhino Python console for errors
-- Simplify the Grasshopper definition
-- Increase timeout in `bridge_client.py` (currently 10 seconds)
+**Fix:**
+1. Check Rhino Python console for errors
+2. Simplify Grasshopper definition
+3. Increase timeout in `MCP/bridge_client.py` line 47 (change `timeout=10`)
 
-#### JSON Decode Errors
-```json
-{
-  "success": false,
-  "error": "Bridge API request failed: Expecting value: line 1 column 1 (char 0)",
-  "error_type": "JSONDecodeError",
-  "error_details": {
-    "message": "Expecting value: line 1 column 1 (char 0)",
-    "line": 1,
-    "column": 1
-  },
-  "endpoint": "/analyze_inputs_context",
-  "request_data": {},
-  "response_status": 500,
-  "response_body": "<!-- Full response body here -->",
-  "response_content_type": "text/html",
-  "debug_hint": "The bridge server returned a non-JSON response..."
-}
-```
+---
 
-**Common causes:**
-- Python exception in the handler (returns HTML error page instead of JSON)
-- Handler returned non-dict type
-- Handler didn't return anything (None)
+### JSONDecodeError
+**Problem:** Bridge returned non-JSON response (usually means Python error)
 
-**How to fix:**
-- Check the `response_body` field for the actual error
-- Look at the Rhino Python console for the full traceback
-- Check the handler implementation for missing return statements
+**Causes:**
+- Handler crashed with Python exception
+- Handler returned wrong type (not dict)
+- Handler returned None
 
-#### HTTP Errors (4xx, 5xx)
-```json
-{
-  "success": false,
-  "error": "HTTP 500 error from bridge server",
-  "error_type": "HTTPError",
-  "status_code": 500,
-  "endpoint": "/analyze_inputs_context",
-  "response_body": "<!-- Error details -->",
-  "request_data": {}
-}
-```
+**Fix:**
+1. Check `response_body` field in error for actual error message
+2. Open Rhino Python console for full traceback
+3. Ensure handler returns `{"success": True/False, ...}`
 
-### 2. Bridge Server Errors (Rhino Side)
+---
 
-The bridge server now prints detailed error information to the Rhino Python console:
+### Handler Exceptions (AttributeError, KeyError, etc.)
+**Problem:** Python exception in bridge handler
 
-```
-[BRIDGE ERROR] Exception in handler handle_analyze_inputs_context for endpoint /analyze_inputs_context
-[BRIDGE ERROR] Exception type: AttributeError
-[BRIDGE ERROR] Exception message: 'NoneType' object has no attribute 'Text'
-[BRIDGE ERROR] Request data: {}
-[BRIDGE ERROR] Full traceback:
-Traceback (most recent call last):
-  File "C:\...\gh_tools.py", line 1684, in handle_analyze_inputs_context
-    scribble_text = obj.Text
-AttributeError: 'NoneType' object has no attribute 'Text'
-```
+**What you get:**
+- Error in Claude with `error_type`, `traceback`, and `file_line`
+- Console output in Rhino with `[BRIDGE ERROR]` prefix
 
-And returns comprehensive error JSON:
-
-```json
-{
-  "success": false,
-  "error": "Handler error: 'NoneType' object has no attribute 'Text'",
-  "error_type": "AttributeError",
-  "endpoint": "/analyze_inputs_context",
-  "traceback": "<!-- Full traceback -->",
-  "request_data": {},
-  "debug_hint": "An exception occurred in the Rhino bridge handler..."
-}
-```
-
-### 3. Handler Decorator Errors
-
-The `@bridge_handler` decorator now wraps every handler with comprehensive error handling:
-
-**Console output:**
-```
-[BRIDGE] Executing handler for endpoint: /analyze_inputs_context
-[BRIDGE] Handler function: handle_analyze_inputs_context
-[BRIDGE] Request data: {}
-[BRIDGE] Handler handle_analyze_inputs_context completed successfully
-```
-
-**On error:**
-```
-[BRIDGE ERROR] Exception in handler handle_analyze_inputs_context for endpoint /analyze_inputs_context
-[BRIDGE ERROR] Exception type: KeyError
-[BRIDGE ERROR] Exception message: 'missing_key'
-[BRIDGE ERROR] Request data: {}
-[BRIDGE ERROR] Full traceback:
-<!-- Full Python traceback -->
-```
-
-**Error response includes:**
-- `error_type`: Exception class name (e.g., "AttributeError", "KeyError")
-- `error_message`: Exception message
-- `endpoint`: The failing endpoint
-- `handler_function`: Name of the handler function
-- `file_line`: Extracted file and line number where error occurred
-- `traceback`: Full Python traceback
-- `traceback_lines`: Last 10 lines of traceback for quick reference
-- `request_data`: The data that was sent to the handler
-- `python_version`: Python version running in Rhino
-- `debug_hint`: Helpful hint about what to check
+**Fix:**
+1. Check `file_line` field to see where error occurred
+2. Look at `traceback` for full stack trace
+3. Check Rhino Python console for detailed output
+4. Add None checks before accessing attributes
+5. Validate data before processing
 
 ## Debugging Workflow
 
-### When a tool call fails:
+**Step 1:** Read the error in Claude
+- Check `error_type` (ConnectionError, Timeout, JSONDecodeError, etc.)
+- Read `debug_hint` for quick guidance
+- Note `file_line` if present
 
-1. **Check the error response** in your Claude conversation
-   - Look at the `error_type` field to understand what kind of error occurred
-   - Read the `debug_hint` for immediate guidance
+**Step 2:** Check Rhino Python Console
+- In Rhino: Type `_EditPythonScript`
+- Look for `[BRIDGE ERROR]` messages
+- Review full traceback
 
-2. **Check the Rhino Python console** (if using Rhino)
-   - Open Rhino
-   - Type `_EditPythonScript` to open the Python editor
-   - Look at the console output for `[BRIDGE ERROR]` messages
-   - Review the full traceback
+**Step 3:** Common Fixes
+- **ConnectionError:** Start bridge server in Rhino
+- **Timeout:** Check Rhino console, simplify GH definition
+- **JSONDecodeError:** Check `response_body` field for actual error
+- **Handler exceptions:** Check `file_line` and fix code at that location
 
-3. **Examine the specific error details**:
-   - For JSONDecodeError: Check `response_body` to see what was returned
-   - For handler exceptions: Check `traceback` and `file_line` fields
-   - For connection errors: Verify the bridge server is running
+---
 
-4. **Common fixes**:
-   - Restart the Rhino bridge server
-   - Check that Grasshopper file is open (for GH tools)
-   - Verify the Grasshopper definition is not in an error state
-   - Look for None/null values in your handler code
+## Console Output Examples
 
-## Example: JSON Decode Errors
-
-**Error pattern:**
-```json
-{
-  "success": false,
-  "error": "Bridge API request failed: Expecting value: line 1 column 1 (char 0)"
-}
+### Successful Handler
+```
+[BRIDGE] Executing handler for endpoint: /draw_line
+[BRIDGE] Handler function: handle_draw_line
+[BRIDGE] Request data: {"start_x": 0, "start_y": 0, ...}
+[BRIDGE] Handler handle_draw_line completed successfully
 ```
 
-**What this indicates:**
-- The bridge server returned an empty or non-JSON response
-- Usually indicates a Python exception in the handler
-- The handler crashed before returning proper JSON
-
-**Detailed error response:**
-```json
-{
-  "success": false,
-  "error": "AttributeError: object has no attribute 'property'",
-  "error_type": "AttributeError",
-  "endpoint": "/endpoint_name",
-  "file_line": "File 'tool_file.py', line 123",
-  "traceback": "<!-- Full traceback -->",
-  "debug_hint": "See traceback field for details"
-}
+### Failed Handler
+```
+[BRIDGE ERROR] Exception in handler handle_draw_line for endpoint /draw_line
+[BRIDGE ERROR] Exception type: AttributeError
+[BRIDGE ERROR] Exception message: 'NoneType' object has no attribute 'X'
+[BRIDGE ERROR] Request data: {"start_x": 0, ...}
+[BRIDGE ERROR] Full traceback:
+...
 ```
 
-**Resolution:**
-- Check the line number in the traceback
-- Add proper null/attribute checks before accessing object properties
-- Review the Rhino Python console for full error details
-
-## Logging
-
-All errors are logged with:
-- **Timestamp** (via Python logging)
-- **Error type** and message
-- **Full context** (endpoint, request data, response)
-- **Actionable hints** in the response
-
-## File Locations
-
-- **MCP/bridge_client.py**: Line 23-138 - Enhanced HTTP error handling
-- **Rhino/rhino_bridge_server.py**: Line 102-197 - Enhanced server error handling
-- **Tools/tool_registry.py**: Line 103-192 - Enhanced handler decorator with error wrapper
+---
 
 ## Best Practices
 
-1. **Always return a dict** from bridge handlers with at least a `success` field
-2. **Use try-except** blocks in your handlers for critical sections
-3. **Add debug_log** arrays to complex handlers for troubleshooting
-4. **Check for None** before accessing object attributes in Rhino/Grasshopper
-5. **Log intermediate steps** using `print()` statements - they appear in Rhino console
-6. **Test handlers** with edge cases (empty documents, missing data, etc.)
+1. ✅ Always return dict with `success` field from handlers
+2. ✅ Check for `None` before accessing attributes
+3. ✅ Use `try-except` in critical sections
+4. ✅ Add `print()` statements for debugging (shows in Rhino console)
+5. ✅ Test with edge cases (empty docs, missing data)
 
-## Reporting Issues
+---
 
-When reporting bugs, include:
-1. The full error JSON response from the tool call
-2. The Rhino Python console output (if applicable)
-3. The request data that triggered the error
-4. Your Rhino version and Python version (from `python_version` field)
-5. Steps to reproduce the issue
+## Key Files
+
+| File | What It Does |
+|------|--------------|
+| `MCP/bridge_client.py` | HTTP error handling & reporting |
+| `Rhino/rhino_bridge_server.py` | Server-side error catching |
+| `Tools/tool_registry.py` | Handler decorator with error wrapper |
+| `Tools/rhino_tools.py` | Uses `filter_debug_response()` |
+| `Tools/gh_tools.py` | Uses `filter_debug_response()` |
+
+---
+
+## Need Help?
+
+**Include this when reporting issues:**
+1. Full error JSON from tool call
+2. Rhino Python console output
+3. Request data that triggered error
+4. Steps to reproduce
