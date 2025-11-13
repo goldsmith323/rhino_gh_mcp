@@ -1,3 +1,20 @@
+<div align="center">
+  <img src="logo.png" alt="Workshop Logo" width="300"/>
+</div>
+
+# Workshop 1: Agentic AI Design Orchestration using MCP
+
+**AAG2025: Advances in Architectural Geometry - Massachusetts Institute of Technology** | 
+**16—17 November 2025** | 
+[Workshop Page](https://www.aag2025.com/workshop-1)
+
+<div align="center">
+  <img src="img_1.jpg" width="30%" />
+  <img src="img_2.jpg" width="30%" />
+  <img src="img_3.jpg" width="30%" />
+</div>
+
+
 # Rhino Grasshopper MCP Server
 
 A Model Context Protocol (MCP) server providing 30+ tools for interacting with Rhino 3D and Grasshopper through natural language. Features include parametric geometry generation, cross-file workflows, intelligent geometry transfer, and automated workflow suggestions. Uses an HTTP bridge architecture to handle Python version compatibility between MCP (Python 3.10+) and Rhino's IronPython.
