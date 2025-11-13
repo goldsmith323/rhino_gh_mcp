@@ -7,6 +7,8 @@
 **Advances in Architectural Geometry - Massachusetts Institute of Technology (AAG2025)**
 **16—17 November 2025**
 
+[Workshop Page](https://www.aag2025.com/workshop-1)
+
 <div align="center">
   <img src="img_1.jpg" width="30%" />
   <img src="img_2.jpg" width="30%" />
@@ -15,17 +17,15 @@
 
 ## Learning Objective
 
-Participants will be introduced to Model Context Protocol (MCP) for agentic automation of the design process inside Claude Desktop.
+This workshop introduced participants to Model Context Protocol (MCP) for agentic automation of the design process inside Claude Desktop.
 
-The workshop will center on real-world-inspired architectural geometry as a case study. Participants will build their first orchestration hub to control the parametric exploration of architectural design options through chatting with an AI agent.
+The workshop centered on real-world-inspired architectural geometry as a case study. Participants built their first orchestration hub to control the parametric exploration of architectural design options through chatting with an AI agent.
 
-The Rhino/Grasshopper parametric model will be connected to external Python functions and Excel databases for performance evaluation, real-time visualizations, and building custom apps.
-
-The final part of the workshop will focus on participants' projects and/or thesis to help define custom MCPs based on their specific needs.
+The Rhino/Grasshopper parametric model was connected to external Python functions and Excel databases for performance evaluation, real-time visualizations, and building custom apps.
 
 ---
 
-# Rhino Grasshopper MCP Server
+# About the Repo: Rhino Grasshopper MCP Server
 
 A Model Context Protocol (MCP) server providing 30+ tools for interacting with Rhino 3D and Grasshopper through natural language. Features include parametric geometry generation, cross-file workflows, intelligent geometry transfer, and automated workflow suggestions. Uses an HTTP bridge architecture to handle Python version compatibility between MCP (Python 3.10+) and Rhino's IronPython.
 
