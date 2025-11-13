@@ -4,8 +4,8 @@
 
 # Workshop 1: Agentic AI Design Orchestration using MCP
 
-**Advances in Architectural Geometry - Massachusetts Institute of Technology (AAG2025)**
-**16—17 November 2025**
+**AAG2025: Advances in Architectural Geometry - Massachusetts Institute of Technology** | 
+**16—17 November 2025** | 
 [Workshop Page](https://www.aag2025.com/workshop-1)
 
 <div align="center">
