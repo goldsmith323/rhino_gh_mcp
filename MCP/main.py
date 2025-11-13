@@ -25,7 +25,7 @@ except ImportError:
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'Tools'))
 try:
-    from tool_registry import discover_tools, get_rhino_tools, get_gh_tools, get_custom_tools, get_all_tools
+    from tool_registry import discover_tools, get_rhino_tools, get_gh_tools, get_custom_tools
 except ImportError as e:
     print(f"Error importing tool registry: {e}")
     sys.exit(1)

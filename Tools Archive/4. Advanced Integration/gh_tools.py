@@ -7,7 +7,6 @@ Rhino bridge server to execute parametric operations within Grasshopper.
 Tools are automatically registered using the @gh_tool decorator.
 """
 
-import asyncio
 import sys
 import os
 from typing import Dict, Any

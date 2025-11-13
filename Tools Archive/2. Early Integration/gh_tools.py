@@ -7,7 +7,6 @@ These are the EXACT same functions used in production, just fewer of them.
 Tools are automatically registered using the @gh_tool decorator.
 """
 
-import asyncio
 import sys
 import os
 from typing import Dict, Any
@@ -46,53 +45,6 @@ except:
 # ============================================================================
 # HELPER FUNCTIONS
 # ============================================================================
-
-def filter_debug_response(response: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Filter response based on DEBUG_MODE setting.
-    If DEBUG_MODE is False, removes verbose debugging information to save tokens.
-
-    Always keeps: success, error, message, and essential data
-    Removes when DEBUG_MODE=False: debug_log, traceback (unless error), detailed step info
-    """
-    if DEBUG_MODE:
-        return response  # Return everything in debug mode
-
-    # Create filtered response
-    filtered = {}
-
-    # Always include these keys
-    essential_keys = [
-        'success', 'error', 'message', 'warning',
-        'file_name', 'file_path', 'parameter_name', 'value',
-        'count', 'geometry_count', 'object_count', 'baked_count',
-        'files', 'sliders', 'components', 'parameters',
-        'geometry_types', 'layer_name', 'results'
-    ]
-
-    for key in essential_keys:
-        if key in response:
-            filtered[key] = response[key]
-
-    # Include debug_log and traceback only if there's an error
-    if not response.get('success', True):
-        if 'debug_log' in response:
-            # Include only last few debug entries for context
-            debug_log = response['debug_log']
-            if isinstance(debug_log, list) and len(debug_log) > 5:
-                filtered['debug_log'] = debug_log[-5:]  # Last 5 entries only
-            else:
-                filtered['debug_log'] = debug_log
-        if 'traceback' in response:
-            filtered['traceback'] = response['traceback']
-
-    # Copy any other keys not explicitly handled
-    for key, value in response.items():
-        if key not in essential_keys and key not in ['debug_log', 'traceback', 'cleared_operations']:
-            filtered[key] = value
-
-    return filtered
-
 
 def ensure_file_is_active(file_name: str) -> Dict[str, Any]:
     """

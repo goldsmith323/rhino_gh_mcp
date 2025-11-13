@@ -7,7 +7,6 @@ Rhino bridge server to execute operations within Rhino 3D.
 Tools are automatically registered using the @rhino_tool decorator.
 """
 
-import asyncio
 import sys
 import os
 from typing import Dict, Any
