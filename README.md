@@ -6,7 +6,6 @@
 
 **Advances in Architectural Geometry - Massachusetts Institute of Technology (AAG2025)**
 **16—17 November 2025**
-
 [Workshop Page](https://www.aag2025.com/workshop-1)
 
 <div align="center">
@@ -15,17 +14,8 @@
   <img src="img_3.jpg" width="30%" />
 </div>
 
-## Learning Objective
 
-This workshop introduced participants to Model Context Protocol (MCP) for agentic automation of the design process inside Claude Desktop.
-
-The workshop centered on real-world-inspired architectural geometry as a case study. Participants built their first orchestration hub to control the parametric exploration of architectural design options through chatting with an AI agent.
-
-The Rhino/Grasshopper parametric model was connected to external Python functions and Excel databases for performance evaluation, real-time visualizations, and building custom apps.
-
----
-
-# About the Repo: Rhino Grasshopper MCP Server
+# Rhino Grasshopper MCP Server
 
 A Model Context Protocol (MCP) server providing 30+ tools for interacting with Rhino 3D and Grasshopper through natural language. Features include parametric geometry generation, cross-file workflows, intelligent geometry transfer, and automated workflow suggestions. Uses an HTTP bridge architecture to handle Python version compatibility between MCP (Python 3.10+) and Rhino's IronPython.
 
