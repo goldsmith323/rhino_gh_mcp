@@ -14,7 +14,7 @@ Rhino's built-in Python 3.9.
 import logging
 import sys
 
-# Try to import MCP - if not available, provide helpful error
+# Try to import MCP - if not available, returning the error
 try:
     from mcp.server.fastmcp import FastMCP
 except ImportError:
@@ -55,7 +55,12 @@ def register_tools():
 
     # Discover all tools from decorated functions
     print("Discovering tools...")
-    discovered = discover_tools()
+    discover_tools()
+    # why discover_tools() ?
+    #1. Clears global registries (_rhino_tools, _gh_tools, _custom_tools)
+    #2. Imports all tool modules (which triggers the decorators to register tools)
+    #3. Populates the global registries that get_rhino_tools(), get_gh_tools(), and get_custom_tools() read from
+    
 
     # Register Custom tools (test tools, utilities, etc.)
     custom_tools = get_custom_tools()
@@ -118,4 +123,9 @@ if __name__ == "__main__":
 
     # Start MCP server
     print("MCP server starting...")
+    
+    # MCP Transport Options:    
+    # - "stdio": Standard input/output for local CLI tools (used with Claude Desktop)
+    # - "sse": Server-Sent Events HTTP server for web-based access (app.run_sse(host, port))
+    # - Custom: Direct asyncio streams with app.run(read_stream, write_stream, init_options)
     mcp.run(transport="stdio")
