@@ -1081,7 +1081,8 @@ def handle_list_eml_parameters(data):
             "number_primitives": [],
             "text_primitives": [],
             "integer_primitives": [],
-            "geometry_params": []
+            "geometry_params": [],
+            "other_parameters": []  # Catch-all for unrecognized types
         }
 
         # Scan all objects in the document
@@ -1093,6 +1094,7 @@ def handle_list_eml_parameters(data):
 
                 # Get common properties
                 obj_guid = str(obj.InstanceGuid)
+                obj_type_name = type(obj).__name__
                 has_sources = hasattr(obj, 'SourceCount') and obj.SourceCount > 0
                 has_recipients = hasattr(obj, 'Recipients') and obj.Recipients.Count > 0
 
@@ -1109,11 +1111,14 @@ def handle_list_eml_parameters(data):
                 base_info = {
                     "name": nick_name,
                     "guid": obj_guid,
+                    "type_name": obj_type_name,  # Add type name for debugging
                     "direction": direction,
                     "has_sources": has_sources,
                     "has_recipients": has_recipients,
                     "description": obj.Description if hasattr(obj, 'Description') else ""
                 }
+
+                categorized = False
 
                 # 1. Number Sliders
                 if isinstance(obj, Grasshopper.Kernel.Special.GH_NumberSlider):
@@ -1125,6 +1130,7 @@ def handle_list_eml_parameters(data):
                         "precision": obj.Slider.DecimalPlaces,
                         "slider_type": obj.Slider.Type.ToString()
                     })
+                    categorized = True
 
                 # 2. Panels
                 elif isinstance(obj, Grasshopper.Kernel.Special.GH_Panel):
@@ -1137,6 +1143,7 @@ def handle_list_eml_parameters(data):
                         "text": panel_text,
                         "multiline": obj.Properties.Multiline if hasattr(obj, 'Properties') else True
                     })
+                    categorized = True
 
                 # 3. Boolean Toggles
                 elif isinstance(obj, Grasshopper.Kernel.Special.GH_BooleanToggle):
@@ -1144,6 +1151,7 @@ def handle_list_eml_parameters(data):
                         **base_info,
                         "value": bool(obj.Value) if hasattr(obj, 'Value') else False
                     })
+                    categorized = True
 
                 # 4. Value Lists
                 elif isinstance(obj, Grasshopper.Kernel.Special.GH_ValueList):
@@ -1162,77 +1170,109 @@ def handle_list_eml_parameters(data):
                         "selected_items": selected_items,
                         "all_items": all_items
                     })
+                    categorized = True
 
-                # 5. Number Primitives
-                elif type(obj).__name__ == 'GH_NumberParameter' or 'Param_Number' in type(obj).__name__:
-                    values = []
+                # Now check for parameter types - use more flexible matching
+                if not categorized:
+                    # Check if it's a parameter (has VolatileData)
                     if hasattr(obj, 'VolatileData'):
-                        for branch in obj.VolatileData.Branches:
-                            for item in branch:
+                        values = []
+                        value_type = None
+                        
+                        # Try to extract values and determine type
+                        try:
+                            for branch in obj.VolatileData.Branches:
+                                for item in branch:
+                                    values.append(item)
+                        except:
+                            pass
+
+                        # 5. String/Text Parameters
+                        if 'String' in obj_type_name or 'Text' in obj_type_name:
+                            text_values = [str(v) for v in values]
+                            eml_params["text_primitives"].append({
+                                **base_info,
+                                "type": "Text",
+                                "values": text_values,
+                                "value_count": len(text_values)
+                            })
+                            categorized = True
+
+                        # 6. Integer Parameters
+                        elif 'Integer' in obj_type_name or 'Int' in obj_type_name:
+                            int_values = []
+                            for v in values:
                                 try:
-                                    values.append(float(str(item)))
+                                    int_values.append(int(str(v)))
                                 except:
                                     pass
+                            eml_params["integer_primitives"].append({
+                                **base_info,
+                                "type": "Integer",
+                                "values": int_values,
+                                "value_count": len(int_values)
+                            })
+                            categorized = True
 
-                    eml_params["number_primitives"].append({
-                        **base_info,
-                        "type": "Number",
-                        "values": values,
-                        "value_count": len(values)
-                    })
-
-                # 6. Integer Primitives
-                elif type(obj).__name__ == 'GH_IntegerParameter' or 'Param_Integer' in type(obj).__name__:
-                    values = []
-                    if hasattr(obj, 'VolatileData'):
-                        for branch in obj.VolatileData.Branches:
-                            for item in branch:
+                        # 7. Number Parameters
+                        elif 'Number' in obj_type_name or 'Float' in obj_type_name or 'Double' in obj_type_name:
+                            num_values = []
+                            for v in values:
                                 try:
-                                    values.append(int(str(item)))
+                                    num_values.append(float(str(v)))
                                 except:
                                     pass
+                            eml_params["number_primitives"].append({
+                                **base_info,
+                                "type": "Number",
+                                "values": num_values,
+                                "value_count": len(num_values)
+                            })
+                            categorized = True
 
-                    eml_params["integer_primitives"].append({
-                        **base_info,
-                        "type": "Integer",
-                        "values": values,
-                        "value_count": len(values)
-                    })
+                        # 8. Geometry Parameters
+                        elif any(geom_type in obj_type_name for geom_type in [
+                            'Curve', 'Surface', 'Brep', 'Geometry',
+                            'Line', 'Circle', 'Arc', 'Point',
+                            'Mesh', 'Plane', 'Vector', 'Box', 'Rectangle'
+                        ]):
+                            geom_count = len(values) if values else 0
+                            if hasattr(obj, 'VolatileDataCount'):
+                                geom_count = obj.VolatileDataCount
 
-                # 7. Text/String Primitives
-                elif type(obj).__name__ == 'GH_StringParameter' or 'Param_String' in type(obj).__name__:
-                    values = []
+                            eml_params["geometry_params"].append({
+                                **base_info,
+                                "geometry_type": obj_type_name.replace('Param_', '').replace('GH_', ''),
+                                "geometry_count": geom_count,
+                                "has_geometry": geom_count > 0
+                            })
+                            categorized = True
+
+                # If still not categorized, add to "other_parameters" with full details
+                if not categorized:
+                    param_info = {**base_info}
+                    
+                    # Try to get any value information
                     if hasattr(obj, 'VolatileData'):
-                        for branch in obj.VolatileData.Branches:
-                            for item in branch:
-                                values.append(str(item))
-
-                    eml_params["text_primitives"].append({
-                        **base_info,
-                        "type": "Text",
-                        "values": values,
-                        "value_count": len(values)
-                    })
-
-                # 8. Geometry Parameters
-                elif any(geom_type in type(obj).__name__ for geom_type in [
-                    'Param_Curve', 'Param_Surface', 'Param_Brep', 'Param_Geometry',
-                    'Param_Line', 'Param_Circle', 'Param_Arc', 'Param_Point',
-                    'Param_Mesh', 'Param_Plane', 'Param_Vector'
-                ]):
-                    geom_count = 0
+                        try:
+                            values = []
+                            for branch in obj.VolatileData.Branches:
+                                for item in branch:
+                                    values.append(str(item))
+                            param_info["values"] = values
+                            param_info["value_count"] = len(values)
+                        except:
+                            param_info["values"] = []
+                            param_info["value_count"] = 0
+                    
+                    # Try to get VolatileDataCount
                     if hasattr(obj, 'VolatileDataCount'):
-                        geom_count = obj.VolatileDataCount
-
-                    eml_params["geometry_params"].append({
-                        **base_info,
-                        "geometry_type": type(obj).__name__.replace('Param_', '').replace('GH_', ''),
-                        "geometry_count": geom_count,
-                        "has_geometry": geom_count > 0
-                    })
+                        param_info["data_count"] = obj.VolatileDataCount
+                    
+                    eml_params["other_parameters"].append(param_info)
 
             except Exception as e:
-                # Skip components that cause errors
+                # Skip components that cause errors but log them
                 continue
 
         # Calculate totals
@@ -1250,7 +1290,8 @@ def handle_list_eml_parameters(data):
                 "number_primitives": len(eml_params["number_primitives"]),
                 "text_primitives": len(eml_params["text_primitives"]),
                 "integer_primitives": len(eml_params["integer_primitives"]),
-                "geometry_params": len(eml_params["geometry_params"])
+                "geometry_params": len(eml_params["geometry_params"]),
+                "other_parameters": len(eml_params["other_parameters"])
             },
             "message": f"Found {total_count} eml_ prefixed parameters"
         }
@@ -1267,7 +1308,7 @@ def handle_list_eml_parameters(data):
             "error": f"Error discovering eml_ parameters: {str(e)}",
             "traceback": traceback.format_exc()
         }
-
+        
 @gh_tool(
     name="get_eml_parameter_value",
     description=(
@@ -1457,6 +1498,9 @@ def handle_set_eml_parameter_value(data):
         import clr
         clr.AddReference('Grasshopper')
         import Grasshopper
+        from Grasshopper.Kernel.Types import GH_Number, GH_Integer, GH_String
+        from Grasshopper.Kernel.Data import GH_Path
+        from Grasshopper.Kernel.Parameters import Param_String, Param_Number, Param_Integer
         import Rhino
         import System
 
@@ -1482,7 +1526,12 @@ def handle_set_eml_parameter_value(data):
         for obj in gh_doc.Objects:
             nick_name = obj.NickName or ""
             if nick_name.lower() == parameter_name.lower():
-                # Slider
+                obj_type_name = type(obj).__name__
+                
+                # Check if has sources (upstream connections)
+                has_sources = hasattr(obj, 'SourceCount') and obj.SourceCount > 0
+
+                # 1. Number Slider
                 if isinstance(obj, Grasshopper.Kernel.Special.GH_NumberSlider):
                     new_value = float(value)
                     clamped_value = max(float(str(obj.Slider.Minimum)),
@@ -1493,14 +1542,13 @@ def handle_set_eml_parameter_value(data):
                         "success": True,
                         "parameter_name": nick_name,
                         "type": "slider",
-                        "old_value": None,
                         "new_value": clamped_value
                     }
 
-                # Panel
+                # 2. Panel (yellow "A")
                 elif isinstance(obj, Grasshopper.Kernel.Special.GH_Panel):
-                    if hasattr(obj, 'Properties'):
-                        obj.Properties.UserText = str(value)
+                    obj.UserText = str(value)
+                    obj.ExpireSolution(True)
                     gh_doc.NewSolution(True)
                     return {
                         "success": True,
@@ -1509,7 +1557,7 @@ def handle_set_eml_parameter_value(data):
                         "new_value": str(value)
                     }
 
-                # Boolean Toggle
+                # 3. Boolean Toggle
                 elif isinstance(obj, Grasshopper.Kernel.Special.GH_BooleanToggle):
                     obj.Value = bool(value)
                     gh_doc.NewSolution(True)
@@ -1520,15 +1568,23 @@ def handle_set_eml_parameter_value(data):
                         "new_value": bool(value)
                     }
 
-                # Value List
+                # 4. Value List
                 elif isinstance(obj, Grasshopper.Kernel.Special.GH_ValueList):
-                    if hasattr(obj, 'ListItems'):
-                        for item in obj.ListItems:
-                            item_name = str(item.Name) if hasattr(item, 'Name') else str(item)
-                            if item_name.lower() == str(value).lower():
-                                item.Selected = True
-                            else:
-                                item.Selected = False
+                    item_found = False
+                    for i, item in enumerate(obj.ListItems):
+                        if item.Name == str(value) or str(item.Value) == str(value):
+                            obj.SelectItem(i)
+                            item_found = True
+                            break
+                    
+                    if not item_found:
+                        return {
+                            "success": False,
+                            "error": f"Value '{value}' not found in value list",
+                            "parameter_name": nick_name,
+                            "type": "value_list"
+                        }
+                    
                     gh_doc.NewSolution(True)
                     return {
                         "success": True,
@@ -1537,12 +1593,96 @@ def handle_set_eml_parameter_value(data):
                         "new_value": str(value)
                     }
 
-                # For primitives, we can't directly set values as they receive from upstream
+                # 5. String Parameter (orange "A" box)
+                elif isinstance(obj, Param_String):
+                    if has_sources:
+                        return {
+                            "success": False,
+                            "error": f"Parameter '{parameter_name}' has upstream connections. Cannot set value directly.",
+                            "parameter_name": nick_name,
+                            "type": "string_parameter"
+                        }
+                    
+                    # Clear volatile data
+                    obj.ClearData()
+                    # Clear persistent data
+                    obj.PersistentData.Clear()
+                    # Add new persistent text at path 0
+                    path = GH_Path(0)
+                    obj.PersistentData.Append(GH_String(str(value)), path)
+                    obj.ExpireSolution(True)
+                    gh_doc.NewSolution(True)
+                    
+                    return {
+                        "success": True,
+                        "parameter_name": nick_name,
+                        "type": "string_parameter",
+                        "new_value": str(value)
+                    }
+
+                # 6. Number Parameter
+                elif isinstance(obj, Param_Number):
+                    if has_sources:
+                        return {
+                            "success": False,
+                            "error": f"Parameter '{parameter_name}' has upstream connections. Cannot set value directly.",
+                            "parameter_name": nick_name,
+                            "type": "number_parameter"
+                        }
+                    
+                    # Clear volatile data
+                    obj.ClearData()
+                    # Clear persistent data
+                    obj.PersistentData.Clear()
+                    # Add new persistent number at path 0
+                    path = GH_Path(0)
+                    obj.PersistentData.Append(GH_Number(float(value)), path)
+                    obj.ExpireSolution(True)
+                    gh_doc.NewSolution(True)
+                    
+                    return {
+                        "success": True,
+                        "parameter_name": nick_name,
+                        "type": "number_parameter",
+                        "new_value": float(value)
+                    }
+
+                # 7. Integer Parameter
+                elif isinstance(obj, Param_Integer):
+                    if has_sources:
+                        return {
+                            "success": False,
+                            "error": f"Parameter '{parameter_name}' has upstream connections. Cannot set value directly.",
+                            "parameter_name": nick_name,
+                            "type": "integer_parameter"
+                        }
+                    
+                    # Clear volatile data
+                    obj.ClearData()
+                    # Clear persistent data
+                    obj.PersistentData.Clear()
+                    # Add new persistent integer at path 0
+                    path = GH_Path(0)
+                    obj.PersistentData.Append(GH_Integer(int(value)), path)
+                    obj.ExpireSolution(True)
+                    gh_doc.NewSolution(True)
+                    
+                    return {
+                        "success": True,
+                        "parameter_name": nick_name,
+                        "type": "integer_parameter",
+                        "new_value": int(value)
+                    }
+
+                # 8. Unknown component type
                 else:
                     return {
                         "success": False,
-                        "error": f"Parameter type '{type(obj).__name__}' does not support direct value setting (primitives receive values from connected components)",
-                        "parameter_name": nick_name
+                        "error": f"Component '{parameter_name}' (type: '{obj_type_name}') does not support direct value setting",
+                        "parameter_name": nick_name,
+                        "type_name": obj_type_name,
+                        "has_sources": has_sources,
+                        "suggestion": "Supported types: sliders, panels, toggles, value lists, string/number/integer parameters. For geometry, use set_grasshopper_geometry_input"
                     }
 
         return {
